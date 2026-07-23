@@ -18,7 +18,9 @@ export class MemberService {
     return this.http.put<ProjectMemberResponse>(`${API}/projects/${projectId}/members/${memberId}`, body);
   }
 
-  remove(projectId: number, memberId: number): Observable<void> {
-    return this.http.delete<void>(`${API}/projects/${projectId}/members/${memberId}`);
+  remove(projectId: number, userId: number): Observable<void> {
+    // The member endpoint identifies the person by their user id, not the
+    // project-membership record id returned by the list endpoint.
+    return this.http.delete<void>(`${API}/projects/${projectId}/members/${userId}`);
   }
 }

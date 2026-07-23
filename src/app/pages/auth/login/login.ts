@@ -50,6 +50,10 @@ import { Router } from '@angular/router';
               }
             </div>
 
+            <div class="text-right">
+              <a routerLink="/forgot-password" class="text-xs font-medium text-indigo-600 hover:underline">Forgot password?</a>
+            </div>
+
             <button type="submit" [disabled]="loading()"
               class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium py-2.5 rounded-lg transition-colors text-sm">
               @if (loading()) { Signing in... } @else { Sign in }

@@ -16,6 +16,11 @@ export const routes: Routes = [
     canActivate: [guestGuard],
     loadComponent: () => import('./pages/auth/register/register').then(m => m.RegisterComponent)
   },
+  {
+    path: 'forgot-password',
+    canActivate: [guestGuard],
+    loadComponent: () => import('./pages/auth/forgot-password/forgot-password').then(m => m.ForgotPasswordComponent)
+  },
 
   // Public invitation route
   {

@@ -31,8 +31,14 @@ import { NotificationResponse } from '../../core/models/notification.model';
           No notifications yet.
         </div>
       } @else {
+        <div class="mb-4 flex items-center justify-between">
+          <p class="text-sm text-slate-500">{{ unreadCount() }} unread</p>
+          <button (click)="showUnreadOnly.set(!showUnreadOnly())" class="text-sm text-indigo-600 hover:underline">
+            {{ showUnreadOnly() ? 'Show all' : 'Show unread only' }}
+          </button>
+        </div>
         <div class="space-y-3">
-          @for (notification of notifications(); track notification.id) {
+          @for (notification of visibleNotifications(); track notification.id) {
             <div
               class="bg-white border rounded-xl p-4 transition-colors"
               [class.border-indigo-300]="!notification.read"
@@ -73,6 +79,9 @@ import { NotificationResponse } from '../../core/models/notification.model';
               </div>
             </div>
           }
+          @if (visibleNotifications().length === 0) {
+            <div class="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-500">No unread notifications.</div>
+          }
         </div>
       }
     </div>
@@ -84,6 +93,7 @@ export class NotificationsComponent implements OnInit {
   notifications = signal<NotificationResponse[]>([]);
   loading = signal(true);
   saving = signal(false);
+  showUnreadOnly = signal(false);
 
   ngOnInit(): void {
     this.load();
@@ -91,6 +101,10 @@ export class NotificationsComponent implements OnInit {
 
   unreadCount(): number {
     return this.notifications().filter(n => !n.read).length;
+  }
+
+  visibleNotifications(): NotificationResponse[] {
+    return this.showUnreadOnly() ? this.notifications().filter(notification => !notification.read) : this.notifications();
   }
 
   markRead(id: number): void {

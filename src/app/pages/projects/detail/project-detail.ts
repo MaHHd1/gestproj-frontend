@@ -60,7 +60,7 @@ import { UserResponse } from '../../../core/models/user.model';
         }
 
         @if (activeSection() === 'board' && statistics()) {
-          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
             <div class="bg-white border border-slate-200 rounded-lg p-3">
               <p class="text-xs text-slate-500">Total</p>
               <p class="text-lg font-semibold text-slate-800">{{ statistics()!.totalTasks }}</p>
@@ -74,16 +74,8 @@ import { UserResponse } from '../../../core/models/user.model';
               <p class="text-lg font-semibold text-amber-700">{{ statistics()!.inProgressTasks }}</p>
             </div>
             <div class="bg-white border border-slate-200 rounded-lg p-3">
-              <p class="text-xs text-slate-500">Not started</p>
-              <p class="text-lg font-semibold text-slate-800">{{ statistics()!.notStartedTasks }}</p>
-            </div>
-            <div class="bg-white border border-slate-200 rounded-lg p-3">
               <p class="text-xs text-slate-500">Late</p>
               <p class="text-lg font-semibold text-red-700">{{ statistics()!.lateTasks }}</p>
-            </div>
-            <div class="bg-white border border-slate-200 rounded-lg p-3">
-              <p class="text-xs text-slate-500">Completion</p>
-              <p class="text-lg font-semibold text-indigo-700">{{ statistics()!.completionPercentage }}%</p>
             </div>
           </div>
         }
@@ -91,11 +83,6 @@ import { UserResponse } from '../../../core/models/user.model';
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
           @if (activeSection() === 'board') {
           <section class="xl:col-span-3 space-y-6">
-            @if (activeSection() === 'board') {
-            <div class="flex justify-end">
-              <a [routerLink]="['/projects', projectId(), 'tasks', 'new']" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Create task</a>
-            </div>
-            }
             @if (false) {
             <div class="bg-white border border-slate-200 rounded-xl p-5">
               <h2 class="font-semibold text-slate-800 mb-4">Create task</h2>
@@ -109,14 +96,14 @@ import { UserResponse } from '../../../core/models/user.model';
                   />
                   <input formControlName="dueDate" type="date" class="px-3 py-2 border border-slate-200 rounded-lg text-sm" />
                   <select formControlName="status" class="px-3 py-2 border border-slate-200 rounded-lg text-sm">
-                    <option value="A_FAIRE">A_FAIRE</option>
-                    <option value="EN_COURS">EN_COURS</option>
-                    <option value="TERMINE">TERMINE</option>
+                    <option value="A_FAIRE">To do</option>
+                    <option value="EN_COURS">In progress</option>
+                    <option value="TERMINE">Done</option>
                   </select>
                   <select formControlName="priority" class="px-3 py-2 border border-slate-200 rounded-lg text-sm">
-                    <option value="BASSE">BASSE</option>
-                    <option value="MOYENNE">MOYENNE</option>
-                    <option value="HAUTE">HAUTE</option>
+                    <option value="BASSE">Low</option>
+                    <option value="MOYENNE">Medium</option>
+                    <option value="HAUTE">High</option>
                   </select>
                   <select formControlName="assignedTo" class="px-3 py-2 border border-slate-200 rounded-lg text-sm">
                     <option value="">Unassigned</option>
@@ -145,23 +132,19 @@ import { UserResponse } from '../../../core/models/user.model';
             }
 
             <div class="bg-white border border-slate-200 rounded-xl p-5">
-              <div class="flex items-center justify-between gap-3 mb-4">
-                <h2 class="font-semibold text-slate-800">Tasks</h2>
-                <button (click)="loadTasks(taskPage())" class="text-xs text-indigo-600 hover:underline">Refresh</button>
-              </div>
 
               <form [formGroup]="taskFiltersForm" (ngSubmit)="applyTaskFilters()" class="grid grid-cols-1 md:grid-cols-5 gap-2 mb-4">
                 <select formControlName="status" class="px-3 py-2 border border-slate-200 rounded-lg text-sm">
                   <option value="">All statuses</option>
-                  <option value="A_FAIRE">A_FAIRE</option>
-                  <option value="EN_COURS">EN_COURS</option>
-                  <option value="TERMINE">TERMINE</option>
+                  <option value="A_FAIRE">To do</option>
+                  <option value="EN_COURS">In progress</option>
+                  <option value="TERMINE">Done</option>
                 </select>
                 <select formControlName="priority" class="px-3 py-2 border border-slate-200 rounded-lg text-sm">
                   <option value="">All priorities</option>
-                  <option value="BASSE">BASSE</option>
-                  <option value="MOYENNE">MOYENNE</option>
-                  <option value="HAUTE">HAUTE</option>
+                  <option value="BASSE">Low</option>
+                  <option value="MOYENNE">Medium</option>
+                  <option value="HAUTE">High</option>
                 </select>
                 <label class="flex items-center gap-2 text-xs text-slate-700 border border-slate-200 rounded-lg px-3 py-2">
                   <input formControlName="assignedToMe" type="checkbox" />
@@ -195,53 +178,46 @@ import { UserResponse } from '../../../core/models/user.model';
 
               <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
                 @for (column of boardColumns; track column.status) {
-                  <section class="rounded-xl bg-slate-100 p-3">
+                  <section
+                    [class]="'rounded-xl border p-3 transition-colors ' + column.columnClass + (dragOverStatus() === column.status ? ' ring-2 ring-indigo-400 ring-offset-2' : '')"
+                    (dragover)="onDragOver($event, column.status)"
+                    (dragleave)="onDragLeave($event, column.status)"
+                    (drop)="onDrop($event, column.status)"
+                  >
                     <div class="flex items-center justify-between mb-3">
-                      <h3 class="text-sm font-semibold text-slate-700">{{ column.label }}</h3>
-                      <span class="rounded-full bg-white px-2 py-0.5 text-xs text-slate-500">{{ tasksForStatus(column.status).length }}</span>
+                      <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                        <span [class]="'h-2.5 w-2.5 rounded-full ' + column.dotClass"></span>{{ column.label }}
+                      </h3>
+                      <div class="flex items-center gap-2">
+                        <span class="rounded-full bg-white px-2 py-0.5 text-xs text-slate-500">{{ tasksForStatus(column.status).length }}</span>
+                        @if (canCreateTask()) {
+                          <a [routerLink]="['/projects', projectId(), 'tasks', 'new']" [queryParams]="{ status: column.status }" class="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700" [attr.aria-label]="'Create task in ' + column.label">+</a>
+                        }
+                      </div>
                     </div>
-                    <div class="space-y-2">
+                    <div class="min-h-20 space-y-2">
                       @for (task of tasksForStatus(column.status); track task.id) {
-                        <a [routerLink]="['/tasks', task.id]" class="block rounded-lg border border-slate-200 bg-white p-3 shadow-sm hover:border-indigo-300">
-                          <p class="text-sm font-medium text-slate-800">{{ task.title }}</p>
-                          <div class="mt-3 flex justify-between gap-2 text-xs text-slate-500">
-                            <span>{{ task.priority }}</span><span class="truncate">{{ task.assignedToUsername || 'Unassigned' }}</span>
-                          </div>
-                        </a>
+                        <div
+                          [attr.draggable]="canMoveTasks() ? 'true' : null"
+                          (dragstart)="onDragStart($event, task)"
+                          (dragend)="onDragEnd()"
+                          [class.opacity-60]="movingTaskId() === task.id"
+                          [class.cursor-grab]="canMoveTasks()"
+                          class="rounded-lg border border-slate-200 bg-white shadow-sm transition hover:border-indigo-300 active:cursor-grabbing"
+                        >
+                          <a [routerLink]="['/tasks', task.id]" class="block p-3">
+                            <p class="text-sm font-medium text-slate-800">{{ task.title }}</p>
+                            <div class="mt-3 flex justify-between gap-2 text-xs text-slate-500">
+                              <span>{{ priorityLabel(task.priority) }}</span><span class="truncate">{{ task.assignedToUsername || 'Unassigned' }}</span>
+                            </div>
+                          </a>
+                        </div>
                       }
-                      @if (tasksForStatus(column.status).length === 0) { <p class="py-3 text-center text-xs text-slate-400">No tasks</p> }
+                      @if (tasksForStatus(column.status).length === 0) { <p class="py-3 text-center text-xs text-slate-400">Drop a task here</p> }
                     </div>
                   </section>
                 }
               </div>
-
-              @if (tasks().length === 0) {
-                <p class="text-sm text-slate-500">No tasks found for current filters.</p>
-              } @else {
-                <div class="space-y-2">
-                  @for (task of tasks(); track task.id) {
-                    <a
-                      [routerLink]="['/tasks', task.id]"
-                      class="block border border-slate-200 rounded-lg p-3 hover:border-indigo-300"
-                    >
-                      <div class="flex items-start justify-between gap-3">
-                        <div>
-                          <p class="font-medium text-slate-800">{{ task.title }}</p>
-                          <p class="text-xs text-slate-500 mt-1">
-                            {{ task.status }} • {{ task.priority }}
-                            @if (task.assignedToUsername) {
-                              • {{ task.assignedToUsername }}
-                            }
-                          </p>
-                        </div>
-                        @if (task.late) {
-                          <span class="text-xs text-red-600 bg-red-50 border border-red-200 px-2 py-1 rounded">Late</span>
-                        }
-                      </div>
-                    </a>
-                  }
-                </div>
-              }
 
               @if (taskTotalPages() > 0) {
                 <div class="flex items-center justify-between mt-4 text-xs text-slate-600">
@@ -310,9 +286,9 @@ import { UserResponse } from '../../../core/models/user.model';
             }
 
             @if (activeSection() === 'details') {
+            @if (canInviteMembers()) {
             <div class="bg-white border border-slate-200 rounded-xl p-5">
               <h2 class="font-semibold text-slate-800 mb-3">Invite member</h2>
-              @if (canInviteMembers()) {
                 <form [formGroup]="inviteForm" (ngSubmit)="createInvite()" class="space-y-3">
                   <div class="space-y-2">
                     <div class="flex gap-2">
@@ -360,17 +336,17 @@ import { UserResponse } from '../../../core/models/user.model';
                     Send invitation
                   </button>
                 </form>
-              } @else {
-                <p class="text-sm text-slate-500">You do not have permission to invite members.</p>
-              }
             </div>
+            }
 
             <div class="bg-white border border-slate-200 rounded-xl p-5">
               <div class="flex items-center justify-between gap-3 mb-3">
                 <h2 class="font-semibold text-slate-800">Members</h2>
+                @if (canManageMembers()) {
                 <button (click)="managingMembers.set(!managingMembers())" class="text-xs text-indigo-600 hover:underline">
                   {{ managingMembers() ? 'Show names only' : 'Manage members' }}
                 </button>
+                }
               </div>
               @if (!managingMembers()) {
                 <div class="space-y-2">
@@ -569,6 +545,8 @@ export class ProjectDetailComponent implements OnInit {
   savingMemberId = signal<number | null>(null);
   savingProjectSettings = signal(false);
   deletingProject = signal(false);
+  movingTaskId = signal<number | null>(null);
+  dragOverStatus = signal<TaskStatus | null>(null);
 
   taskPage = signal(0);
   taskTotalPages = signal(0);
@@ -577,10 +555,10 @@ export class ProjectDetailComponent implements OnInit {
   managingMembers = signal(false);
 
   memberDrafts: Record<number, ProjectMemberUpdateRequest> = {};
-  readonly boardColumns: { status: TaskStatus; label: string }[] = [
-    { status: 'A_FAIRE', label: 'To do' },
-    { status: 'EN_COURS', label: 'In progress' },
-    { status: 'TERMINE', label: 'Done' }
+  readonly boardColumns: { status: TaskStatus; label: string; columnClass: string; dotClass: string }[] = [
+    { status: 'A_FAIRE', label: 'To do', columnClass: 'border-slate-200 bg-slate-100', dotClass: 'bg-slate-500' },
+    { status: 'EN_COURS', label: 'In progress', columnClass: 'border-amber-200 bg-amber-50', dotClass: 'bg-amber-500' },
+    { status: 'TERMINE', label: 'Done', columnClass: 'border-emerald-200 bg-emerald-50', dotClass: 'bg-emerald-500' }
   ];
 
   taskForm = this.fb.nonNullable.group({
@@ -899,6 +877,11 @@ export class ProjectDetailComponent implements OnInit {
     return !!member && (member.role === 'OWNER' || member.canCreateTask);
   }
 
+  canMoveTasks(): boolean {
+    const member = this.currentMember();
+    return !!member && member.status === 'ACTIVE' && (member.role === 'OWNER' || member.canEditTask);
+  }
+
   canInviteMembers(): boolean {
     const member = this.currentMember();
     return !!member && (member.role === 'OWNER' || member.canInviteMember);
@@ -935,7 +918,7 @@ export class ProjectDetailComponent implements OnInit {
       return;
     }
     this.savingMemberId.set(member.id);
-    this.memberService.remove(projectId, member.id).subscribe({
+    this.memberService.remove(projectId, member.userId).subscribe({
       next: () => {
         this.members.update(members => members.filter(item => item.id !== member.id));
         const { [member.id]: _, ...drafts } = this.memberDrafts;
@@ -951,6 +934,72 @@ export class ProjectDetailComponent implements OnInit {
 
   tasksForStatus(status: TaskStatus): TaskResponse[] {
     return this.tasks().filter(task => task.status === status);
+  }
+
+  priorityLabel(priority: TaskPriority): string {
+    return ({ BASSE: 'Low', MOYENNE: 'Medium', HAUTE: 'High' })[priority];
+  }
+
+  onDragStart(event: DragEvent, task: TaskResponse): void {
+    if (!this.canMoveTasks()) {
+      event.preventDefault();
+      return;
+    }
+    this.movingTaskId.set(task.id);
+    event.dataTransfer?.setData('text/plain', String(task.id));
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+    }
+  }
+
+  onDragOver(event: DragEvent, status: TaskStatus): void {
+    if (!this.canMoveTasks() || !this.movingTaskId()) {
+      return;
+    }
+    event.preventDefault();
+    event.dataTransfer!.dropEffect = 'move';
+    this.dragOverStatus.set(status);
+  }
+
+  onDragLeave(event: DragEvent, status: TaskStatus): void {
+    if (event.currentTarget === event.target && this.dragOverStatus() === status) {
+      this.dragOverStatus.set(null);
+    }
+  }
+
+  onDragEnd(): void {
+    this.movingTaskId.set(null);
+    this.dragOverStatus.set(null);
+  }
+
+  onDrop(event: DragEvent, status: TaskStatus): void {
+    event.preventDefault();
+    const taskId = this.movingTaskId() ?? Number(event.dataTransfer?.getData('text/plain'));
+    this.onDragEnd();
+    const task = this.tasks().find(item => item.id === taskId);
+    if (!task || task.status === status || !this.canMoveTasks()) {
+      return;
+    }
+
+    const previousStatus = task.status;
+    this.tasks.update(tasks => tasks.map(item => item.id === task.id ? { ...item, status } : item));
+    this.taskService.update(task.id, {
+      title: task.title,
+      description: task.description,
+      status,
+      priority: task.priority,
+      dueDate: task.dueDate,
+      assignedTo: task.assignedTo
+    }).subscribe({
+      next: () => {
+        this.loadStatistics();
+        this.setActionError('');
+      },
+      error: err => {
+        this.tasks.update(tasks => tasks.map(item => item.id === task.id ? { ...item, status: previousStatus } : item));
+        this.setActionError(err.error?.message ?? 'Unable to move task.');
+      }
+    });
   }
 
   pendingInvitations(): ProjectInvitationResponse[] {

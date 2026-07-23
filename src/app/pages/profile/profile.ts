@@ -30,8 +30,9 @@ import { UserResponse } from '../../core/models/user.model';
             }
             <div>
               <p class="text-lg font-semibold text-slate-800">{{ user()!.name }}</p>
-              <p class="text-slate-500 text-sm">{{ user()!.email }}</p>
+              <p class="text-slate-500 text-sm">@{{ user()!.username }}</p>
             </div>
+            <button (click)="refresh()" class="ml-auto rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">Refresh</button>
           </div>
 
           <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -47,8 +48,18 @@ import { UserResponse } from '../../core/models/user.model';
               <dt class="text-xs text-slate-500 uppercase tracking-wide">Account status</dt>
               <dd class="text-green-700 font-medium mt-1">Active</dd>
             </div>
+            <div class="rounded-lg bg-slate-50 border border-slate-200 p-4">
+              <dt class="text-xs text-slate-500 uppercase tracking-wide">User ID</dt>
+              <dd class="text-slate-800 font-medium mt-1">#{{ user()!.id }}</dd>
+            </div>
           </dl>
-          <p class="mt-5 text-xs text-slate-500">Profile editing and password changes will appear here when the backend profile-update endpoint is available.</p>
+          <div class="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-5">
+            <div>
+              <p class="text-sm font-medium text-slate-800">Account security</p>
+              <p class="text-xs text-slate-500">Password and profile editing require the account API.</p>
+            </div>
+            <button (click)="logout()" class="rounded-lg border border-red-300 px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-50">Sign out</button>
+          </div>
         </div>
       }
     </div>
@@ -61,6 +72,10 @@ export class ProfileComponent implements OnInit {
   loading = signal(true);
 
   ngOnInit(): void {
+    this.refresh();
+  }
+
+  refresh(): void {
     this.loading.set(true);
     this.auth.me().subscribe({
       next: user => {
@@ -72,6 +87,10 @@ export class ProfileComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  logout(): void {
+    this.auth.logout();
   }
 
   initials(): string {

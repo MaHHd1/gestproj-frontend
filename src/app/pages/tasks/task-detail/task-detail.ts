@@ -37,6 +37,7 @@ import { ProjectMemberResponse } from '../../../core/models/member.model';
           }
         </div>
 
+        @if (loadingMembers() || canEditTask() || canDeleteTask()) {
         <div class="bg-white border border-slate-200 rounded-xl p-5 mb-6">
           <h2 class="font-semibold text-slate-800 mb-4">Edit task</h2>
           @if (loadingMembers()) {
@@ -46,14 +47,14 @@ import { ProjectMemberResponse } from '../../../core/models/member.model';
               <input formControlName="title" type="text" class="px-3 py-2 border border-slate-200 rounded-lg text-sm" />
               <input formControlName="description" type="text" class="px-3 py-2 border border-slate-200 rounded-lg text-sm" />
               <select formControlName="status" class="px-3 py-2 border border-slate-200 rounded-lg text-sm">
-                <option value="A_FAIRE">A_FAIRE</option>
-                <option value="EN_COURS">EN_COURS</option>
-                <option value="TERMINE">TERMINE</option>
+                <option value="A_FAIRE">To do</option>
+                <option value="EN_COURS">In progress</option>
+                <option value="TERMINE">Done</option>
               </select>
               <select formControlName="priority" class="px-3 py-2 border border-slate-200 rounded-lg text-sm">
-                <option value="BASSE">BASSE</option>
-                <option value="MOYENNE">MOYENNE</option>
-                <option value="HAUTE">HAUTE</option>
+                <option value="BASSE">Low</option>
+                <option value="MOYENNE">Medium</option>
+                <option value="HAUTE">High</option>
               </select>
               <input formControlName="dueDate" type="date" class="px-3 py-2 border border-slate-200 rounded-lg text-sm" />
               <select formControlName="assignedTo" class="px-3 py-2 border border-slate-200 rounded-lg text-sm">
@@ -70,8 +71,6 @@ import { ProjectMemberResponse } from '../../../core/models/member.model';
                 Save changes
               </button>
             </form>
-          } @else {
-            <p class="text-sm text-slate-500">You do not have permission to edit this task.</p>
           }
 
           @if (!loadingMembers() && canDeleteTask()) {
@@ -85,6 +84,7 @@ import { ProjectMemberResponse } from '../../../core/models/member.model';
             </button>
           }
         </div>
+        }
 
         <div class="bg-white border border-slate-200 rounded-xl p-5">
           <h2 class="font-semibold text-slate-800 mb-4">Comments</h2>
@@ -107,8 +107,6 @@ import { ProjectMemberResponse } from '../../../core/models/member.model';
                 Send
               </button>
             </form>
-          } @else {
-            <p class="text-sm text-slate-500 mb-4">Only active project members can add comments.</p>
           }
 
           @if (comments().length === 0) {

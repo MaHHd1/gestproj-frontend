@@ -36,7 +36,12 @@ export class CreateTaskComponent {
   projectId = Number(this.route.snapshot.paramMap.get('id'));
   saving = false;
   error = '';
-  form = this.fb.nonNullable.group({ title: ['', Validators.required], description: [''], status: ['A_FAIRE' as TaskStatus], priority: ['MOYENNE' as TaskPriority], dueDate: [''] });
+  form = this.fb.nonNullable.group({ title: ['', Validators.required], description: [''], status: [this.initialStatus()], priority: ['MOYENNE' as TaskPriority], dueDate: [''] });
+
+  private initialStatus(): TaskStatus {
+    const status = this.route.snapshot.queryParamMap.get('status');
+    return status === 'EN_COURS' || status === 'TERMINE' || status === 'A_FAIRE' ? status : 'A_FAIRE';
+  }
   save(): void {
     if (!Number.isFinite(this.projectId) || this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.saving = true; this.error = '';

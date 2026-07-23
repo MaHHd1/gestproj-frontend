@@ -1,0 +1,33 @@
+name: CI - Tests Frontend
+
+on:
+  push:
+    branches:
+      - main
+      - "feature/**"
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Configuration Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Installer les dependances
+        run: npm ci
+
+      - name: Executer les tests unitaires
+        run: npm test -- --watch=false --browsers=ChromeHeadless
+
+      - name: Verifier que le build de production fonctionne
+        run: npm run build
