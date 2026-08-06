@@ -28,11 +28,21 @@ export class ProjectService {
   }
 
   create(body: ProjectCreateRequest): Observable<ProjectResponse> {
-    return this.http.post<ProjectResponse>(`${API}/projects`, body);
+    return this.http.post<ProjectResponse>(`${API}/projects`, {
+      name: body.name,
+      description: body.description,
+      repoOwner: body.repoOwner?.trim() || null,
+      repoName: body.repoName?.trim() || null
+    });
   }
 
   update(id: number, body: ProjectUpdateRequest): Observable<ProjectResponse> {
-    return this.http.put<ProjectResponse>(`${API}/projects/${id}`, body);
+    return this.http.put<ProjectResponse>(`${API}/projects/${id}`, {
+      name: body.name,
+      description: body.description,
+      repoOwner: body.repoOwner?.trim() || null,
+      repoName: body.repoName?.trim() || null
+    });
   }
 
   delete(id: number): Observable<void> {

@@ -4,16 +4,22 @@ export interface ProjectResponse {
   description: string;
   ownerId: number;
   ownerUsername: string;
+  repoOwner?: string | null;
+  repoName?: string | null;
 }
 
 export interface ProjectCreateRequest {
   name: string;
   description: string;
+  repoOwner?: string | null;
+  repoName?: string | null;
 }
 
 export interface ProjectUpdateRequest {
   name: string;
   description: string;
+  repoOwner?: string | null;
+  repoName?: string | null;
 }
 
 export interface ProjectStatisticsResponse {

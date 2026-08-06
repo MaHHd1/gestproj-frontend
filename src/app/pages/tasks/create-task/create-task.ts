@@ -16,14 +16,14 @@ import { TaskPriority, TaskStatus } from '../../../core/models/task.model';
       <p class="mt-1 text-sm text-slate-500">Add the task details, then return to the project board.</p>
       <form [formGroup]="form" (ngSubmit)="save()" class="mt-6 space-y-5 rounded-xl border border-slate-200 bg-white p-6">
         @if (error) { <p class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{{ error }}</p> }
-        <div><label class="mb-1 block text-sm font-medium">Title</label><input formControlName="title" class="w-full rounded-lg border border-slate-200 px-3 py-2" /></div>
-        <div><label class="mb-1 block text-sm font-medium">Description</label><textarea formControlName="description" rows="4" class="w-full rounded-lg border border-slate-200 px-3 py-2"></textarea></div>
+        <div><label class="gp-label">Title</label><input formControlName="title" class="gp-input" [class.gp-input-error]="form.controls.title.invalid && form.controls.title.touched" />@if (form.controls.title.invalid && form.controls.title.touched) { <p class="mt-1 text-xs text-red-600">A task title is required.</p> }</div>
+        <div><label class="gp-label">Description</label><textarea formControlName="description" rows="4" class="gp-input"></textarea></div>
         <div class="grid gap-4 md:grid-cols-3">
-          <div><label class="mb-1 block text-sm font-medium">Status</label><select formControlName="status" class="w-full rounded-lg border border-slate-200 px-3 py-2"><option value="A_FAIRE">To do</option><option value="EN_COURS">In progress</option><option value="TERMINE">Done</option></select></div>
-          <div><label class="mb-1 block text-sm font-medium">Priority</label><select formControlName="priority" class="w-full rounded-lg border border-slate-200 px-3 py-2"><option value="BASSE">Low</option><option value="MOYENNE">Medium</option><option value="HAUTE">High</option></select></div>
-          <div><label class="mb-1 block text-sm font-medium">Due date</label><input formControlName="dueDate" type="date" class="w-full rounded-lg border border-slate-200 px-3 py-2" /></div>
+          <div><label class="gp-label">Status</label><select formControlName="status" class="gp-input"><option value="A_FAIRE">To do</option><option value="EN_COURS">In progress</option><option value="TERMINE">Done</option></select></div>
+          <div><label class="gp-label">Priority</label><select formControlName="priority" class="gp-input"><option value="BASSE">Low</option><option value="MOYENNE">Medium</option><option value="HAUTE">High</option></select></div>
+          <div><label class="gp-label">Due date</label><input formControlName="dueDate" type="date" class="gp-input" /></div>
         </div>
-        <div class="flex justify-end gap-3"><a [routerLink]="['/projects', projectId]" class="rounded-lg border border-slate-200 px-4 py-2 text-sm">Cancel</a><button [disabled]="saving" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60">Create task</button></div>
+        <div class="flex justify-end gap-3"><a [routerLink]="['/projects', projectId]" class="gp-btn-secondary">Cancel</a><button [disabled]="saving" class="gp-btn-primary">Create task</button></div>
       </form>
     </div>
   `

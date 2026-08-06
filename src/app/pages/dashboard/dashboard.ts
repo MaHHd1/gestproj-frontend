@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ProjectService } from '../../core/services/project.service';
-import { ProjectResponse } from '../../core/models/project.model';
+import { ProjectCreateRequest, ProjectResponse } from '../../core/models/project.model';
 
 @Component({
   selector: 'app-dashboard',
@@ -12,13 +12,12 @@ import { ProjectResponse } from '../../core/models/project.model';
   template: `
     <div class="p-8">
       <!-- Header -->
-      <div class="flex items-center justify-between mb-8">
+      <div class="mb-8 flex items-center justify-between border-b border-slate-700 pb-5">
         <div>
-          <h1 class="text-2xl font-bold text-slate-800">Projects</h1>
-          <p class="text-slate-500 text-sm mt-1">All your collaborative projects</p>
+          <h1 class="text-2xl font-bold text-white">Projects</h1>
+          <p class="mt-1 text-sm text-slate-400">Your project workspaces and linked repositories</p>
         </div>
-        <button (click)="showModal.set(true)"
-          class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+        <button (click)="showModal.set(true)" class="gp-btn-primary flex items-center gap-2">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
           </svg>
@@ -29,7 +28,7 @@ import { ProjectResponse } from '../../core/models/project.model';
       <!-- Loading -->
       @if (loading()) {
         <div class="flex justify-center py-20">
-          <div class="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+          <div class="w-8 h-8 border-4 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
         </div>
       }
 
@@ -45,7 +44,7 @@ import { ProjectResponse } from '../../core/models/project.model';
           <h3 class="text-slate-600 font-medium mb-2">No projects yet</h3>
           <p class="text-slate-400 text-sm mb-4">Create your first project to get started</p>
           <button (click)="showModal.set(true)"
-            class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+            class="bg-slate-950 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
             Create project
           </button>
         </div>
@@ -53,26 +52,32 @@ import { ProjectResponse } from '../../core/models/project.model';
 
       <!-- Project grid -->
       @if (!loading() && projects().length > 0) {
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           @for (project of projects(); track project.id) {
             <a [routerLink]="['/projects', project.id]"
-              class="bg-white rounded-xl border border-slate-200 p-6 hover:border-indigo-300 hover:shadow-md transition-all group cursor-pointer block">
-              <div class="flex items-start justify-between mb-3">
-                <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                  <span class="text-indigo-600 font-bold text-sm">{{ project.name.charAt(0).toUpperCase() }}</span>
+              class="group block rounded-xl border border-slate-700 bg-[#161b22] p-5 shadow-sm transition duration-150 hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-md">
+              <div class="mb-4 flex items-start justify-between">
+                <div class="flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 bg-[#f6f8fa]">
+                  <span class="font-mono text-sm font-bold text-slate-700">{{ project.name.charAt(0).toUpperCase() }}</span>
                 </div>
-                <svg class="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4 h-4 text-slate-300 group-hover:text-slate-900 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                 </svg>
               </div>
-              <h3 class="font-semibold text-slate-800 mb-1 group-hover:text-indigo-700 transition-colors">{{ project.name }}</h3>
-              <p class="text-slate-500 text-sm line-clamp-2 mb-4">{{ project.description || 'No description' }}</p>
-              <div class="flex items-center gap-1 text-xs text-slate-400">
+              <h3 class="mb-1 font-semibold text-white transition-colors group-hover:underline">{{ project.name }}</h3>
+              <p class="mb-5 min-h-10 text-sm leading-5 text-slate-400 line-clamp-2">{{ project.description || 'No description provided.' }}</p>
+              @if (project.repoOwner && project.repoName) {
+                <p class="mb-4 inline-flex max-w-full items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600"><span aria-hidden="true">⌘</span><span class="truncate">{{ project.repoOwner }}/{{ project.repoName }}</span></p>
+              }
+              <div class="flex items-center justify-between border-t border-slate-700 pt-3 text-xs text-slate-400">
+                <span class="flex items-center gap-1">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                 </svg>
                 {{ project.ownerUsername }}
+                </span>
+                <span class="font-medium text-slate-900">Open project →</span>
               </div>
             </a>
           }
@@ -99,9 +104,9 @@ import { ProjectResponse } from '../../core/models/project.model';
 
           <form [formGroup]="createForm" (ngSubmit)="createProject()" class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1">Project name *</label>
+              <label class="gp-label">Project name *</label>
               <input formControlName="name" type="text" placeholder="My awesome project"
-                class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                class="gp-input"
                 [class.border-red-400]="createForm.get('name')?.invalid && createForm.get('name')?.touched">
               @if (createForm.get('name')?.invalid && createForm.get('name')?.touched) {
                 <p class="text-red-500 text-xs mt-1">Project name is required</p>
@@ -109,19 +114,35 @@ import { ProjectResponse } from '../../core/models/project.model';
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+              <label class="gp-label">Description</label>
               <textarea formControlName="description" rows="3" placeholder="What is this project about?"
-                class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm resize-none">
+                class="gp-input resize-none">
               </textarea>
+            </div>
+
+            <div class="rounded-lg border border-slate-200 bg-[#f6f8fa] p-4">
+              <div class="mb-3 flex items-center gap-2"><span class="text-lg text-slate-600" aria-hidden="true">⌘</span><div><p class="text-sm font-semibold text-slate-800">Repository connection <span class="font-normal text-slate-500">(optional)</span></p><p class="text-xs text-slate-500">Link a Gitea repository to see commits and deployments.</p></div></div>
+              <div class="grid gap-3 sm:grid-cols-2">
+              <div>
+              <label class="gp-label">Repository owner</label>
+              <input formControlName="repoOwner" type="text" placeholder="e.g. my-org"
+                class="gp-input">
+              </div>
+              <div>
+              <label class="gp-label">Repository name</label>
+              <input formControlName="repoName" type="text" placeholder="e.g. gestproj-backend"
+                class="gp-input">
+              </div>
+              </div>
             </div>
 
             <div class="flex gap-3 pt-2">
               <button type="button" (click)="closeModal()"
-                class="flex-1 border border-slate-200 text-slate-600 hover:bg-slate-50 py-2 rounded-lg text-sm font-medium transition-colors">
+                class="gp-btn-secondary flex-1">
                 Cancel
               </button>
               <button type="submit" [disabled]="creating()"
-                class="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white py-2 rounded-lg text-sm font-medium transition-colors">
+                class="gp-btn-primary flex-1">
                 @if (creating()) { Creating... } @else { Create }
               </button>
             </div>
@@ -143,7 +164,9 @@ export class DashboardComponent implements OnInit {
 
   createForm = this.fb.group({
     name: ['', Validators.required],
-    description: ['']
+    description: [''],
+    repoOwner: [''],
+    repoName: ['']
   });
 
   ngOnInit(): void {
@@ -168,7 +191,13 @@ export class DashboardComponent implements OnInit {
     }
     this.creating.set(true);
     this.createError.set('');
-    this.projectService.create(this.createForm.value as any).subscribe({
+    const payload: ProjectCreateRequest = {
+      name: this.createForm.controls.name.value ?? '',
+      description: this.createForm.controls.description.value ?? '',
+      repoOwner: this.createForm.controls.repoOwner.value ?? null,
+      repoName: this.createForm.controls.repoName.value ?? null
+    };
+    this.projectService.create(payload).subscribe({
       next: project => {
         this.projects.update(list => [project, ...list]);
         this.closeModal();

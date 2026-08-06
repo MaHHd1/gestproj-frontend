@@ -16,7 +16,8 @@ import { ToastService } from '../../core/services/toast.service';
               : 'border-blue-200 bg-blue-50 text-blue-800'"
           role="alert"
         >
-          <p class="flex-1 text-sm">{{ toast.message }}</p>
+          <span class="mt-0.5 text-base" aria-hidden="true">{{ toast.type === 'error' ? '!' : toast.type === 'success' ? '✓' : 'i' }}</span>
+          <p class="flex-1 text-sm font-medium">{{ toast.message }}</p>
           <button type="button" (click)="toastService.dismiss(toast.id)" class="text-lg leading-none opacity-70 hover:opacity-100" aria-label="Dismiss notification">&times;</button>
         </div>
       }

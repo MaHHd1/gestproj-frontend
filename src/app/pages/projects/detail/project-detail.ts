@@ -7,6 +7,8 @@ import { TaskFilters, TaskService } from '../../../core/services/task.service';
 import { MemberService } from '../../../core/services/member.service';
 import { InvitationService } from '../../../core/services/invitation.service';
 import { ActivityLogService } from '../../../core/services/activity-log.service';
+import { DeploymentService } from '../../../core/services/deployment.service';
+import { CommitService } from '../../../core/services/commit.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { UserService } from '../../../core/services/user.service';
 import { ProjectResponse, ProjectStatisticsResponse } from '../../../core/models/project.model';
@@ -19,6 +21,8 @@ import {
 } from '../../../core/models/member.model';
 import { ProjectInvitationResponse } from '../../../core/models/invitation.model';
 import { ActivityLogResponse } from '../../../core/models/activity-log.model';
+import { DeploymentResponse } from '../../../core/models/deployment.model';
+import { CommitResponse } from '../../../core/models/commit.model';
 import { UserResponse } from '../../../core/models/user.model';
 
 @Component({
@@ -36,19 +40,28 @@ import { UserResponse } from '../../../core/models/user.model';
       } @else if (project()) {
         <div class="flex flex-wrap items-start justify-between gap-4 mb-8">
           <div>
-            <h1 class="text-2xl font-bold text-slate-800">{{ project()!.name }}</h1>
-            <p class="text-slate-500 text-sm mt-1">{{ project()!.description || 'No description' }}</p>
+            <h1 class="text-2xl font-bold text-white">{{ project()!.name }}</h1>
+            <p class="text-slate-400 text-sm mt-1">{{ project()!.description || 'No description' }}</p>
+            @if (linkedRepository()) {
+              <p class="mt-2 inline-flex items-center rounded-full border border-slate-300 bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-800">
+                <span aria-hidden="true">⌘</span>&nbsp;Linked repository: {{ linkedRepository() }}
+              </p>
+            }
           </div>
-          <a routerLink="/dashboard" class="text-sm text-indigo-600 hover:underline">Back to projects</a>
+          <a routerLink="/dashboard" class="text-sm font-medium text-slate-700 hover:text-slate-950 hover:underline">Back to projects</a>
         </div>
 
-        <div class="mb-6 flex items-center gap-2 border-b border-slate-200">
+        <div class="mb-6 flex items-center gap-1 overflow-x-auto border-b border-slate-700">
+          <button (click)="activeSection.set('deployments')"
+            [class]="activeSection() === 'deployments' ? 'border-b-2 border-white px-4 py-3 text-sm font-semibold text-white' : 'px-4 py-3 text-sm text-slate-400 hover:text-white'">
+            Repository
+          </button>
           <button (click)="activeSection.set('board')"
-            [class]="activeSection() === 'board' ? 'border-b-2 border-indigo-600 px-4 py-3 text-sm font-semibold text-indigo-700' : 'px-4 py-3 text-sm text-slate-500 hover:text-slate-800'">
-            Board
+            [class]="activeSection() === 'board' ? 'border-b-2 border-white px-4 py-3 text-sm font-semibold text-white' : 'px-4 py-3 text-sm text-slate-400 hover:text-white'">
+            Full board
           </button>
           <button (click)="activeSection.set('details')"
-            [class]="activeSection() === 'details' ? 'border-b-2 border-indigo-600 px-4 py-3 text-sm font-semibold text-indigo-700' : 'px-4 py-3 text-sm text-slate-500 hover:text-slate-800'">
+            [class]="activeSection() === 'details' ? 'border-b-2 border-white px-4 py-3 text-sm font-semibold text-white' : 'px-4 py-3 text-sm text-slate-400 hover:text-white'">
             Details & members
           </button>
         </div>
@@ -61,21 +74,21 @@ import { UserResponse } from '../../../core/models/user.model';
 
         @if (activeSection() === 'board' && statistics()) {
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-            <div class="bg-white border border-slate-200 rounded-lg p-3">
-              <p class="text-xs text-slate-500">Total</p>
-              <p class="text-lg font-semibold text-slate-800">{{ statistics()!.totalTasks }}</p>
+            <div class="rounded-lg border border-slate-700 bg-[#161b22] p-3">
+              <p class="text-xs text-slate-400">Total</p>
+              <p class="text-lg font-semibold text-white">{{ statistics()!.totalTasks }}</p>
             </div>
-            <div class="bg-white border border-slate-200 rounded-lg p-3">
-              <p class="text-xs text-slate-500">Completed</p>
-              <p class="text-lg font-semibold text-green-700">{{ statistics()!.completedTasks }}</p>
+            <div class="rounded-lg border border-slate-700 bg-[#161b22] p-3">
+              <p class="text-xs text-slate-400">Completed</p>
+              <p class="text-lg font-semibold text-white">{{ statistics()!.completedTasks }}</p>
             </div>
-            <div class="bg-white border border-slate-200 rounded-lg p-3">
-              <p class="text-xs text-slate-500">In progress</p>
-              <p class="text-lg font-semibold text-amber-700">{{ statistics()!.inProgressTasks }}</p>
+            <div class="rounded-lg border border-slate-700 bg-[#161b22] p-3">
+              <p class="text-xs text-slate-400">In progress</p>
+              <p class="text-lg font-semibold text-white">{{ statistics()!.inProgressTasks }}</p>
             </div>
-            <div class="bg-white border border-slate-200 rounded-lg p-3">
-              <p class="text-xs text-slate-500">Late</p>
-              <p class="text-lg font-semibold text-red-700">{{ statistics()!.lateTasks }}</p>
+            <div class="rounded-lg border border-slate-700 bg-[#161b22] p-3">
+              <p class="text-xs text-slate-400">Late</p>
+              <p class="text-lg font-semibold text-white">{{ statistics()!.lateTasks }}</p>
             </div>
           </div>
         }
@@ -84,7 +97,7 @@ import { UserResponse } from '../../../core/models/user.model';
           @if (activeSection() === 'board') {
           <section class="xl:col-span-3 space-y-6">
             @if (false) {
-            <div class="bg-white border border-slate-200 rounded-xl p-5">
+            <div class="rounded-xl border border-slate-300 bg-[#f6f8fa] p-4 shadow-sm">
               <h2 class="font-semibold text-slate-800 mb-4">Create task</h2>
               @if (canCreateTask()) {
                 <form [formGroup]="taskForm" (ngSubmit)="createTask()" class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -131,71 +144,28 @@ import { UserResponse } from '../../../core/models/user.model';
             </div>
             }
 
-            <div class="bg-white border border-slate-200 rounded-xl p-5">
+            <div class="rounded-xl border border-slate-700 bg-[#161b22] p-4 shadow-sm">
 
-              <form [formGroup]="taskFiltersForm" (ngSubmit)="applyTaskFilters()" class="grid grid-cols-1 md:grid-cols-5 gap-2 mb-4">
-                <select formControlName="status" class="px-3 py-2 border border-slate-200 rounded-lg text-sm">
-                  <option value="">All statuses</option>
-                  <option value="A_FAIRE">To do</option>
-                  <option value="EN_COURS">In progress</option>
-                  <option value="TERMINE">Done</option>
-                </select>
-                <select formControlName="priority" class="px-3 py-2 border border-slate-200 rounded-lg text-sm">
-                  <option value="">All priorities</option>
-                  <option value="BASSE">Low</option>
-                  <option value="MOYENNE">Medium</option>
-                  <option value="HAUTE">High</option>
-                </select>
-                <label class="flex items-center gap-2 text-xs text-slate-700 border border-slate-200 rounded-lg px-3 py-2">
-                  <input formControlName="assignedToMe" type="checkbox" />
-                  Assigned to me
-                </label>
-                <label class="flex items-center gap-2 text-xs text-slate-700 border border-slate-200 rounded-lg px-3 py-2">
-                  <input formControlName="overdue" type="checkbox" />
-                  Overdue
-                </label>
-                <select formControlName="size" class="px-3 py-2 border border-slate-200 rounded-lg text-sm">
-                  <option [ngValue]="10">10 / page</option>
-                  <option [ngValue]="20">20 / page</option>
-                  <option [ngValue]="50">50 / page</option>
-                </select>
-                <div class="md:col-span-5 flex items-center gap-2">
-                  <button
-                    type="submit"
-                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-xs font-medium"
-                  >
-                    Apply filters
-                  </button>
-                  <button
-                    type="button"
-                    (click)="resetTaskFilters()"
-                    class="border border-slate-200 hover:bg-slate-50 px-3 py-2 rounded-lg text-xs font-medium text-slate-700"
-                  >
-                    Reset
-                  </button>
-                </div>
-              </form>
-
-              <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
+              <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
                 @for (column of boardColumns; track column.status) {
                   <section
-                    [class]="'rounded-xl border p-3 transition-colors ' + column.columnClass + (dragOverStatus() === column.status ? ' ring-2 ring-indigo-400 ring-offset-2' : '')"
+                    [class]="'rounded-lg border border-slate-700 bg-[#0d1117] p-3 transition-colors ' + (dragOverStatus() === column.status ? ' ring-2 ring-slate-400 ring-offset-2 ring-offset-[#161b22]' : '')"
                     (dragover)="onDragOver($event, column.status)"
                     (dragleave)="onDragLeave($event, column.status)"
                     (drop)="onDrop($event, column.status)"
                   >
                     <div class="flex items-center justify-between mb-3">
-                      <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                        <span [class]="'h-2.5 w-2.5 rounded-full ' + column.dotClass"></span>{{ column.label }}
+                      <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-200">
+                        <span class="h-2 w-2 rounded-full bg-white"></span>{{ column.label }}
                       </h3>
                       <div class="flex items-center gap-2">
-                        <span class="rounded-full bg-white px-2 py-0.5 text-xs text-slate-500">{{ tasksForStatus(column.status).length }}</span>
+                        <span class="rounded-full border border-slate-600 bg-slate-800 px-2 py-0.5 text-xs text-slate-300">{{ tasksForStatus(column.status).length }}</span>
                         @if (canCreateTask()) {
-                          <a [routerLink]="['/projects', projectId(), 'tasks', 'new']" [queryParams]="{ status: column.status }" class="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700" [attr.aria-label]="'Create task in ' + column.label">+</a>
+                          <a [routerLink]="['/projects', projectId(), 'tasks', 'new']" [queryParams]="{ status: column.status }" class="flex h-6 w-6 items-center justify-center rounded-md bg-slate-900 text-base font-medium text-white hover:bg-slate-700" [attr.aria-label]="'Create task in ' + column.label">+</a>
                         }
                       </div>
                     </div>
-                    <div class="min-h-20 space-y-2">
+                    <div class="min-h-20 space-y-3">
                       @for (task of tasksForStatus(column.status); track task.id) {
                         <div
                           [attr.draggable]="canMoveTasks() ? 'true' : null"
@@ -203,23 +173,41 @@ import { UserResponse } from '../../../core/models/user.model';
                           (dragend)="onDragEnd()"
                           [class.opacity-60]="movingTaskId() === task.id"
                           [class.cursor-grab]="canMoveTasks()"
-                          class="rounded-lg border border-slate-200 bg-white shadow-sm transition hover:border-indigo-300 active:cursor-grabbing"
+                          [class.border-red-400]="task.late"
+                          [class.bg-red-950]="task.late"
+                          class="group overflow-hidden rounded-md border border-slate-700 bg-[#161b22] shadow-sm transition duration-150 hover:border-slate-400 hover:shadow-md active:cursor-grabbing"
                         >
-                          <a [routerLink]="['/tasks', task.id]" class="block p-3">
-                            <p class="text-sm font-medium text-slate-800">{{ task.title }}</p>
-                            <div class="mt-3 flex justify-between gap-2 text-xs text-slate-500">
-                              <span>{{ priorityLabel(task.priority) }}</span><span class="truncate">{{ task.assignedToUsername || 'Unassigned' }}</span>
+                          <a [routerLink]="['/tasks', task.id]" class="block p-3.5">
+                            <div class="flex items-start justify-between gap-3">
+                              <p class="line-clamp-2 text-sm font-semibold leading-5 text-white group-hover:underline">{{ task.title }}</p>
+                              <span [class]="priorityBadgeClass(task.priority)">{{ task.priority }}</span>
                             </div>
+                            <div class="mt-4 flex items-center justify-between gap-3">
+                              <div class="flex min-w-0 items-center gap-2">
+                                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-900 text-[10px] font-bold uppercase tracking-wide text-white" [attr.aria-label]="task.assignedToUsername ? 'Assigned to ' + task.assignedToUsername : 'Unassigned'">
+                                  {{ userInitials(task.assignedToUsername) }}
+                                </span>
+                                <span class="truncate text-xs font-medium text-slate-300">{{ task.assignedToUsername || 'Unassigned' }}</span>
+                              </div>
+                              @if (task.dueDate) {
+                                <span [class]="task.late ? 'flex shrink-0 items-center gap-1 text-xs font-semibold text-red-200' : 'flex shrink-0 items-center gap-1 text-xs font-medium text-slate-300'">
+                                  <span aria-hidden="true">&#128197;</span>{{ formatDate(task.dueDate) }}
+                                </span>
+                              }
+                            </div>
+                            @if (task.late) {
+                              <p class="mt-3 flex items-center gap-1 border-t border-red-700 pt-2 text-xs font-semibold text-red-100"><span aria-hidden="true">&#9888;</span> Overdue</p>
+                            }
                           </a>
                         </div>
                       }
-                      @if (tasksForStatus(column.status).length === 0) { <p class="py-3 text-center text-xs text-slate-400">Drop a task here</p> }
+                      @if (tasksForStatus(column.status).length === 0) { <div class="rounded-lg border border-dashed border-slate-300 bg-white/60 py-5 text-center text-xs text-slate-500">No tasks yet<br><span class="text-slate-400">Drop a task here</span></div> }
                     </div>
                   </section>
                 }
               </div>
 
-              @if (taskTotalPages() > 0) {
+              @if (false && taskTotalPages() > 0) {
                 <div class="flex items-center justify-between mt-4 text-xs text-slate-600">
                   <span>
                     Page {{ taskPage() + 1 }} / {{ taskTotalPages() }} • {{ taskTotalElements() }} tasks
@@ -242,33 +230,126 @@ import { UserResponse } from '../../../core/models/user.model';
                   </div>
                 </div>
               }
+
+            </div>
+          </section>
+          }
+
+          @if (activeSection() === 'deployments') {
+          <section class="xl:col-span-3">
+            <div class="rounded-xl border border-slate-700 bg-[#161b22] p-5 shadow-sm">
+              <div class="mb-5 flex items-start justify-between gap-4"><div><p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Gitea repository</p><h2 class="mt-1 font-semibold text-white">{{ linkedRepository() || 'Repository activity' }}</h2></div><span class="rounded-md border border-slate-600 bg-slate-800 px-2 py-1 text-xs font-medium text-slate-200">Gitea</span></div>
+              <h3 class="mb-3 text-sm font-semibold text-slate-200">Deployments</h3>
+              @if (!hasLinkedRepository()) {
+                <div class="gp-empty-state min-h-32"><div class="gp-empty-icon" aria-hidden="true">⌘</div><p class="font-medium text-slate-700">No repository linked</p><p class="mt-1 text-sm text-slate-500">Link a Gitea repository to view its commits and deployments.</p>@if (canEditProject()) { <button type="button" (click)="activeSection.set('details')" class="mt-4 text-sm font-medium text-slate-950 hover:underline">Add repository</button> }</div>
+              } @else if (loadingDeployments()) {
+                <p class="text-sm text-slate-500">Loading deployments...</p>
+              } @else if (deployments().length === 0) {
+                <div class="gp-empty-state min-h-32"><div class="gp-empty-icon" aria-hidden="true">↗</div><p class="font-medium text-slate-700">No deployments yet</p><p class="mt-1 text-sm text-slate-500">Deployment activity for this project will appear here.</p></div>
+              } @else {
+                <div class="overflow-x-auto">
+                  <table class="min-w-full text-sm">
+                    <thead>
+                      <tr class="border-b border-slate-700 text-left text-xs uppercase tracking-wide text-slate-400">
+                        <th class="py-2 pr-4 font-medium">Status</th>
+                        <th class="py-2 pr-4 font-medium">Commit</th>
+                        <th class="py-2 pr-4 font-medium">Triggered by</th>
+                        <th class="py-2 font-medium">When</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (deployment of deployments(); track deployment.id) {
+                        <tr class="border-b border-slate-700 last:border-0">
+                          <td class="py-3 pr-4">
+                            <span [class]="deployment.status === 'SUCCESS' ? 'inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700' : 'inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700'">
+                              {{ deployment.status }}
+                            </span>
+                          </td>
+                          <td class="py-3 pr-4">
+                            <p class="font-medium text-slate-100">{{ deployment.commitMessage || 'No commit message' }}</p>
+                            <p class="text-xs text-slate-400 font-mono">{{ shortCommitHash(deployment.commitHash) }}</p>
+                          </td>
+                          <td class="py-3 pr-4 text-slate-300">{{ deployment.triggeredBy }}</td>
+                          <td class="py-3 text-slate-400">{{ relativeTimeFromNow(deployment.finishedAt || deployment.startedAt) }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+
+              @if (hasLinkedRepository()) {
+                <div class="mt-6 border-t border-slate-700 pt-5">
+                  <h2 class="mb-3 font-semibold text-slate-100">Recent commits</h2>
+                  @if (loadingCommits()) {
+                    <p class="text-sm text-slate-500">Loading commits...</p>
+                  } @else if (commits().length === 0) {
+                    <p class="text-sm text-slate-500">No recent commits for this repository.</p>
+                  } @else {
+                    <ul class="divide-y divide-slate-700">
+                      @for (commit of commits(); track commit.sha) {
+                        <li class="flex flex-col gap-1 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                          <div class="min-w-0">
+                            <p class="truncate font-medium text-slate-100">{{ commit.message || 'No commit message' }}</p>
+                            <p class="mt-1 font-mono text-xs text-slate-400">{{ shortCommitHash(commit.sha) }}</p>
+                          </div>
+                          <p class="shrink-0 text-xs text-slate-400">{{ commit.authorName || 'Unknown author' }} &middot; {{ relativeTimeFromNow(commit.date) }}</p>
+                        </li>
+                      }
+                    </ul>
+                  }
+                </div>
+              }
             </div>
           </section>
           }
 
           @if (activeSection() === 'details') {
-          <section class="xl:col-span-3 mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 xl:grid-cols-2">
+          <section class="xl:col-span-3 mx-auto grid w-full max-w-6xl grid-cols-1 gap-5 xl:grid-cols-2">
             @if (activeSection() === 'details') {
             @if (canEditProject()) {
-              <div class="bg-white border border-slate-200 rounded-xl p-5">
-                <h2 class="font-semibold text-slate-800 mb-3">Project settings</h2>
-                <form [formGroup]="projectSettingsForm" (ngSubmit)="saveProjectSettings()" class="space-y-3">
+              <div class="rounded-xl border border-slate-700 bg-[#161b22] p-5 shadow-sm xl:col-span-2">
+                <div class="mb-5 border-b border-slate-700 pb-4"><p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Project configuration</p><h2 class="mt-1 font-semibold text-white">Project details and repository</h2><p class="mt-1 text-sm text-slate-400">Keep the workspace information and its Gitea connection together.</p></div>
+                <form [formGroup]="projectSettingsForm" (ngSubmit)="saveProjectSettings()" class="space-y-4">
                   <input
                     formControlName="name"
                     type="text"
                     placeholder="Project name"
-                    class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                    class="gp-input"
                   />
                   <textarea
                     formControlName="description"
                     rows="3"
                     placeholder="Project description"
-                    class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                    class="gp-input"
                   ></textarea>
+                  <div class="rounded-lg border border-slate-700 bg-[#0d1117] p-4">
+                    <div class="mb-3 flex items-start gap-2"><span class="mt-0.5 text-slate-600" aria-hidden="true">⌘</span><div><p class="text-sm font-semibold text-slate-800">Repository connection</p><p class="text-xs text-slate-500">Add an owner and repository name to load commits and deployments.</p></div></div>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                    <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-600">Repository owner <span class="text-slate-400">(optional)</span></label>
+                    <input
+                      formControlName="repoOwner"
+                      type="text"
+                      placeholder="e.g. my-org"
+                      class="gp-input"
+                    />
+                    </div>
+                    <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-600">Repository name <span class="text-slate-400">(optional)</span></label>
+                    <input
+                      formControlName="repoName"
+                      type="text"
+                      placeholder="e.g. gestproj-backend"
+                      class="gp-input"
+                    />
+                    </div>
+                    </div>
+                  </div>
                   <button
                     type="submit"
                     [disabled]="savingProjectSettings()"
-                    class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white py-2 rounded-lg text-sm font-medium"
+                    class="w-full bg-slate-950 hover:bg-slate-700 disabled:opacity-60 text-white py-2 rounded-lg text-sm font-medium"
                   >
                     Save project
                   </button>
@@ -287,8 +368,8 @@ import { UserResponse } from '../../../core/models/user.model';
 
             @if (activeSection() === 'details') {
             @if (canInviteMembers()) {
-            <div class="bg-white border border-slate-200 rounded-xl p-5">
-              <h2 class="font-semibold text-slate-800 mb-3">Invite member</h2>
+            <div class="rounded-xl border border-slate-700 bg-[#161b22] p-5 shadow-sm">
+              <div class="mb-4"><p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Collaboration</p><h2 class="mt-1 font-semibold text-white">Invite member</h2></div>
                 <form [formGroup]="inviteForm" (ngSubmit)="createInvite()" class="space-y-3">
                   <div class="space-y-2">
                     <div class="flex gap-2">
@@ -326,12 +407,12 @@ import { UserResponse } from '../../../core/models/user.model';
                     formControlName="invitedEmail"
                     type="email"
                     placeholder="member@email.com"
-                    class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                    class="gp-input"
                   />
                   <button
                     type="submit"
                     [disabled]="savingInvite()"
-                    class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white py-2 rounded-lg text-sm font-medium"
+                    class="gp-btn-primary w-full"
                   >
                     Send invitation
                   </button>
@@ -339,11 +420,11 @@ import { UserResponse } from '../../../core/models/user.model';
             </div>
             }
 
-            <div class="bg-white border border-slate-200 rounded-xl p-5">
+            <div class="rounded-xl border border-slate-700 bg-[#161b22] p-5 shadow-sm">
               <div class="flex items-center justify-between gap-3 mb-3">
-                <h2 class="font-semibold text-slate-800">Members</h2>
+                <div><p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Access</p><h2 class="mt-1 font-semibold text-white">Members</h2></div>
                 @if (canManageMembers()) {
-                <button (click)="managingMembers.set(!managingMembers())" class="text-xs text-indigo-600 hover:underline">
+                <button (click)="managingMembers.set(!managingMembers())" class="text-xs font-medium text-slate-950 hover:underline">
                   {{ managingMembers() ? 'Show names only' : 'Manage members' }}
                 </button>
                 }
@@ -351,19 +432,22 @@ import { UserResponse } from '../../../core/models/user.model';
               @if (!managingMembers()) {
                 <div class="space-y-2">
                   @for (member of members(); track member.id) {
-                    <div class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
-                      <span class="text-sm font-medium text-slate-800">{{ member.username }}</span>
-                      <span class="text-xs text-slate-500">{{ member.role }}</span>
+                    <div class="flex items-center justify-between rounded-lg border border-slate-700 bg-[#0d1117] px-3 py-2">
+                      <span class="text-sm font-medium text-slate-100">{{ member.username }}</span>
+                      <span class="text-xs text-slate-400">{{ member.role }}</span>
                     </div>
+                  }
+                  @empty {
+                    <div class="gp-empty-state min-h-28"><div class="gp-empty-icon" aria-hidden="true">○</div><p class="text-sm font-medium text-slate-700">No additional members yet</p><p class="mt-1 text-xs text-slate-500">Invite collaborators to work together.</p></div>
                   }
                 </div>
               } @else if (members().length === 0) {
-                <p class="text-sm text-slate-500">No members loaded.</p>
+                <div class="gp-empty-state min-h-28"><div class="gp-empty-icon" aria-hidden="true">○</div><p class="text-sm font-medium text-slate-700">No members loaded</p></div>
               } @else {
                 <div class="space-y-3">
                   @for (member of members(); track member.id) {
                     @if (memberDrafts[member.id]; as draft) {
-                      <div class="border border-slate-200 rounded-lg p-3 space-y-3">
+                      <div class="space-y-3 rounded-lg border border-slate-700 bg-[#0d1117] p-3">
                         <div>
                           <p class="text-sm font-medium text-slate-800">{{ member.username }}</p>
                           <p class="text-xs text-slate-500 mt-1">{{ member.role }} · {{ member.status }}</p>
@@ -446,7 +530,7 @@ import { UserResponse } from '../../../core/models/user.model';
                           <button
                             (click)="saveMember(member.id)"
                             [disabled]="member.role === 'OWNER' || !canManageMembers() || savingMemberId() === member.id"
-                            class="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white px-3 py-1.5 rounded text-xs font-medium"
+                            class="bg-slate-950 hover:bg-slate-700 disabled:opacity-60 text-white px-3 py-1.5 rounded text-xs font-medium"
                           >
                             Save
                           </button>
@@ -475,21 +559,6 @@ import { UserResponse } from '../../../core/models/user.model';
               }
             </div>
 
-            <div class="bg-white border border-slate-200 rounded-xl p-5">
-              <h2 class="font-semibold text-slate-800 mb-3">Pending invitations</h2>
-              @if (pendingInvitations().length === 0) {
-                <p class="text-sm text-slate-500">No pending invitations.</p>
-              } @else {
-                <div class="space-y-2">
-                  @for (invitation of pendingInvitations(); track invitation.id) {
-                    <div class="border border-slate-200 rounded-lg p-3">
-                      <p class="text-sm text-slate-800">{{ invitation.invitedEmail }}</p>
-                      <p class="text-xs text-slate-500 mt-1">{{ invitation.status }}</p>
-                    </div>
-                  }
-                </div>
-              }
-            </div>
             }
 
             @if (false) {
@@ -526,6 +595,8 @@ export class ProjectDetailComponent implements OnInit {
   private memberService = inject(MemberService);
   private invitationService = inject(InvitationService);
   private activityLogService = inject(ActivityLogService);
+  private deploymentService = inject(DeploymentService);
+  private commitService = inject(CommitService);
   private userService = inject(UserService);
 
   projectId = signal<number | null>(null);
@@ -535,8 +606,12 @@ export class ProjectDetailComponent implements OnInit {
   members = signal<ProjectMemberResponse[]>([]);
   invitations = signal<ProjectInvitationResponse[]>([]);
   activityLogs = signal<ActivityLogResponse[]>([]);
+  deployments = signal<DeploymentResponse[]>([]);
+  commits = signal<CommitResponse[]>([]);
   inviteCandidates = signal<UserResponse[]>([]);
   searchingInviteCandidates = signal(false);
+  loadingDeployments = signal(false);
+  loadingCommits = signal(false);
   loading = signal(true);
   error = signal('');
   actionError = signal('');
@@ -551,7 +626,7 @@ export class ProjectDetailComponent implements OnInit {
   taskPage = signal(0);
   taskTotalPages = signal(0);
   taskTotalElements = signal(0);
-  activeSection = signal<'board' | 'details'>('board');
+  activeSection = signal<'board' | 'details' | 'deployments'>('deployments');
   managingMembers = signal(false);
 
   memberDrafts: Record<number, ProjectMemberUpdateRequest> = {};
@@ -585,7 +660,9 @@ export class ProjectDetailComponent implements OnInit {
 
   projectSettingsForm = this.fb.nonNullable.group({
     name: ['', Validators.required],
-    description: ['']
+    description: [''],
+    repoOwner: [''],
+    repoName: ['']
   });
 
   ngOnInit(): void {
@@ -820,15 +897,26 @@ export class ProjectDetailComponent implements OnInit {
     this.projectService
       .update(id, {
         name: this.projectSettingsForm.controls.name.value,
-        description: this.projectSettingsForm.controls.description.value
+        description: this.projectSettingsForm.controls.description.value,
+        repoOwner: this.projectSettingsForm.controls.repoOwner.value,
+        repoName: this.projectSettingsForm.controls.repoName.value
       })
       .subscribe({
         next: updated => {
           this.project.set(updated);
           this.projectSettingsForm.reset({
             name: updated.name,
-            description: updated.description ?? ''
+            description: updated.description ?? '',
+            repoOwner: updated.repoOwner ?? '',
+            repoName: updated.repoName ?? ''
           });
+          if (this.hasLinkedRepository()) {
+            this.loadDeployments();
+            this.loadCommits();
+          } else {
+            this.deployments.set([]);
+            this.commits.set([]);
+          }
           this.savingProjectSettings.set(false);
           this.setActionError('');
         },
@@ -940,6 +1028,26 @@ export class ProjectDetailComponent implements OnInit {
     return ({ BASSE: 'Low', MOYENNE: 'Medium', HAUTE: 'High' })[priority];
   }
 
+  priorityBadgeClass(priority: TaskPriority): string {
+    return {
+      BASSE: 'shrink-0 rounded-full border border-slate-300 bg-slate-100 px-2 py-1 text-[10px] font-bold tracking-wide text-slate-600',
+      MOYENNE: 'shrink-0 rounded-full border border-slate-500 bg-slate-200 px-2 py-1 text-[10px] font-bold tracking-wide text-slate-700',
+      HAUTE: 'shrink-0 rounded-full bg-slate-900 px-2 py-1 text-[10px] font-bold tracking-wide text-white'
+    }[priority];
+  }
+
+  userInitials(username: string | null): string {
+    if (!username) {
+      return '?';
+    }
+    return username
+      .trim()
+      .split(/\s+/)
+      .map(part => part.charAt(0))
+      .join('')
+      .slice(0, 2);
+  }
+
   onDragStart(event: DragEvent, task: TaskResponse): void {
     if (!this.canMoveTasks()) {
       event.preventDefault();
@@ -1006,6 +1114,47 @@ export class ProjectDetailComponent implements OnInit {
     return this.invitations().filter(invitation => invitation.status === 'PENDING');
   }
 
+  linkedRepository(): string {
+    const owner = this.project()?.repoOwner?.trim();
+    const name = this.project()?.repoName?.trim();
+    if (!owner || !name) {
+      return '';
+    }
+    return `${owner}/${name}`;
+  }
+
+  hasLinkedRepository(): boolean {
+    return this.linkedRepository().length > 0;
+  }
+
+  shortCommitHash(hash: string): string {
+    const normalized = hash?.trim();
+    if (!normalized) {
+      return '-';
+    }
+    return normalized.slice(0, 7);
+  }
+
+  relativeTimeFromNow(value: string): string {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+    const diffMs = date.getTime() - Date.now();
+    const minute = 60 * 1000;
+    const hour = 60 * minute;
+    const day = 24 * hour;
+    const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+
+    if (Math.abs(diffMs) < hour) {
+      return rtf.format(Math.round(diffMs / minute), 'minute');
+    }
+    if (Math.abs(diffMs) < day) {
+      return rtf.format(Math.round(diffMs / hour), 'hour');
+    }
+    return rtf.format(Math.round(diffMs / day), 'day');
+  }
+
   private loadAll(id: number): void {
     this.loading.set(true);
     this.actionError.set('');
@@ -1014,8 +1163,17 @@ export class ProjectDetailComponent implements OnInit {
         this.project.set(project);
         this.projectSettingsForm.reset({
           name: project.name,
-          description: project.description ?? ''
+          description: project.description ?? '',
+          repoOwner: project.repoOwner ?? '',
+          repoName: project.repoName ?? ''
         });
+        if (this.hasLinkedRepository()) {
+          this.loadDeployments();
+          this.loadCommits();
+        } else {
+          this.deployments.set([]);
+          this.commits.set([]);
+        }
         this.loading.set(false);
       },
       error: err => {
@@ -1073,6 +1231,42 @@ export class ProjectDetailComponent implements OnInit {
       next: statistics => this.statistics.set(statistics),
       error: err => {
         this.setActionError(err.error?.message ?? 'Unable to load project statistics.');
+      }
+    });
+  }
+
+  private loadDeployments(): void {
+    const id = this.projectId();
+    if (!id) {
+      return;
+    }
+    this.loadingDeployments.set(true);
+    this.deploymentService.list(id).subscribe({
+      next: deployments => {
+        this.deployments.set(deployments);
+        this.loadingDeployments.set(false);
+      },
+      error: err => {
+        this.setActionError(err.error?.message ?? 'Unable to load project deployments.');
+        this.loadingDeployments.set(false);
+      }
+    });
+  }
+
+  private loadCommits(): void {
+    const id = this.projectId();
+    if (!id) {
+      return;
+    }
+    this.loadingCommits.set(true);
+    this.commitService.list(id).subscribe({
+      next: commits => {
+        this.commits.set(commits);
+        this.loadingCommits.set(false);
+      },
+      error: err => {
+        this.setActionError(err.error?.message ?? 'Unable to load recent commits.');
+        this.loadingCommits.set(false);
       }
     });
   }

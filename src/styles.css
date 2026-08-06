@@ -1,3 +1,67 @@
 /* You can add global styles to this file, and also import other style files */
 
 @import 'tailwindcss';
+
+@layer base {
+  body {
+    @apply bg-[#0d1117] text-slate-200 antialiased;
+  }
+
+  h1 {
+    @apply text-3xl font-bold tracking-tight text-slate-900;
+  }
+  h2 {
+    @apply text-xl font-semibold text-slate-800;
+  }
+  h3 {
+    @apply text-lg font-semibold text-slate-800;
+  }
+
+  input:not([type='checkbox']):not([type='radio']),
+  textarea,
+  select {
+    @apply border-slate-600 bg-[#0d1117] text-white placeholder:text-slate-500 focus:border-white focus:outline-none focus:ring-2 focus:ring-slate-600;
+  }
+}
+
+@layer components {
+  .gp-input {
+    @apply w-full rounded-lg border border-slate-600 bg-[#0d1117] px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-white focus:outline-none focus:ring-2 focus:ring-slate-600;
+  }
+
+  .gp-input-error {
+    @apply border-red-400 focus:border-red-500 focus:ring-red-100;
+  }
+
+  .gp-label {
+    @apply mb-1 block text-sm font-medium text-slate-700;
+  }
+
+  .gp-btn-primary {
+    @apply rounded-lg bg-slate-950 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .gp-btn-secondary {
+    @apply rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50;
+  }
+
+  .gp-empty-state {
+    @apply flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center;
+  }
+
+  .gp-empty-icon {
+    @apply mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-slate-200 text-xl text-slate-800;
+  }
+
+  app-forgot-password label {
+    @apply text-slate-200;
+  }
+
+  app-forgot-password button[type='submit'] {
+    @apply bg-white font-semibold text-slate-950 hover:bg-slate-200;
+  }
+
+  app-forgot-password a {
+    @apply text-white;
+  }
+}

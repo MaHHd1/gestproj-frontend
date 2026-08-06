@@ -9,16 +9,16 @@ import { AuthService } from '../../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   template: `
-    <div class="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 to-indigo-950 p-4">
+    <div class="flex min-h-screen items-center justify-center bg-[#0d1117] p-4">
       <div class="w-full max-w-md">
         <div class="mb-8 text-center"><h1 class="text-4xl font-bold text-white"><span class="text-indigo-400">Gest</span>Proj</h1><p class="mt-2 text-slate-400">Reset your password</p></div>
-        <div class="rounded-2xl bg-white p-8 shadow-2xl">
+        <div class="rounded-xl border border-slate-700 bg-[#161b22] p-8 shadow-2xl">
           @if (sent()) {
-            <h2 class="text-2xl font-bold text-slate-800">Check your inbox</h2>
-            <p class="mt-3 text-sm text-slate-600">If an account exists for that address, we sent password-reset instructions.</p>
-            <a routerLink="/login" class="mt-6 inline-block text-sm font-medium text-indigo-600 hover:underline">Back to sign in</a>
+            <h2 class="text-2xl font-bold text-white">Check your inbox</h2>
+            <p class="mt-3 text-sm text-slate-300">If an account exists for that address, we sent password-reset instructions.</p>
+            <a routerLink="/login" class="mt-6 inline-block text-sm font-medium text-white hover:underline">Back to sign in</a>
           } @else {
-            <h2 class="text-2xl font-bold text-slate-800">Forgot password?</h2>
+            <h2 class="text-2xl font-bold text-white">Forgot password?</h2>
             <p class="mt-2 text-sm text-slate-500">Enter your email and we’ll send reset instructions.</p>
             @if (error()) { <p class="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{{ error() }}</p> }
             <form [formGroup]="form" (ngSubmit)="submit()" class="mt-6 space-y-4">

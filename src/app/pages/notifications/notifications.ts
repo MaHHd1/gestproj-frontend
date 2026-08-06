@@ -18,7 +18,7 @@ import { NotificationResponse } from '../../core/models/notification.model';
         <button
           (click)="markAllAsRead()"
           [disabled]="saving() || unreadCount() === 0"
-          class="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          class="bg-slate-950 hover:bg-slate-700 disabled:opacity-60 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
         >
           Mark all as read
         </button>
@@ -27,26 +27,30 @@ import { NotificationResponse } from '../../core/models/notification.model';
       @if (loading()) {
         <div class="text-slate-500">Loading notifications...</div>
       } @else if (notifications().length === 0) {
-        <div class="bg-white border border-slate-200 rounded-xl p-6 text-slate-500 text-sm">
-          No notifications yet.
+        <div class="gp-empty-state text-slate-500">
+          <div class="gp-empty-icon" aria-hidden="true">✦</div>
+          <p class="font-medium text-slate-700">No notifications yet</p>
+          <p class="mt-1 text-sm">Updates from your projects will appear here.</p>
         </div>
       } @else {
         <div class="mb-4 flex items-center justify-between">
           <p class="text-sm text-slate-500">{{ unreadCount() }} unread</p>
-          <button (click)="showUnreadOnly.set(!showUnreadOnly())" class="text-sm text-indigo-600 hover:underline">
+          <button (click)="showUnreadOnly.set(!showUnreadOnly())" class="text-sm font-medium text-slate-900 hover:underline">
             {{ showUnreadOnly() ? 'Show all' : 'Show unread only' }}
           </button>
         </div>
         <div class="space-y-3">
           @for (notification of visibleNotifications(); track notification.id) {
             <div
-              class="bg-white border rounded-xl p-4 transition-colors"
-              [class.border-indigo-300]="!notification.read"
+              class="border rounded-xl p-4 transition-colors"
+              [class.border-slate-500]="!notification.read"
               [class.border-slate-200]="notification.read"
+              [class.bg-slate-100]="!notification.read"
+              [class.bg-white]="notification.read"
             >
               <div class="flex items-start justify-between gap-4">
                 <div>
-                  <p class="font-semibold text-slate-800">{{ notification.title }}</p>
+                  <p class="flex items-center gap-2 font-semibold text-slate-800">@if (!notification.read) { <span class="h-2 w-2 rounded-full bg-slate-950" aria-label="Unread"></span> }{{ notification.title }}</p>
                   <p class="text-sm text-slate-600 mt-1">{{ notification.message }}</p>
                   <p class="text-xs text-slate-400 mt-2">{{ formatDate(notification.createdAt) }}</p>
                 </div>

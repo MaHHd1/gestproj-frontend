@@ -44,20 +44,20 @@ import { ProjectMemberResponse } from '../../../core/models/member.model';
             <p class="text-sm text-slate-500">Loading permissions...</p>
           } @else if (canEditTask()) {
             <form [formGroup]="editForm" (ngSubmit)="saveTask()" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <input formControlName="title" type="text" class="px-3 py-2 border border-slate-200 rounded-lg text-sm" />
-              <input formControlName="description" type="text" class="px-3 py-2 border border-slate-200 rounded-lg text-sm" />
-              <select formControlName="status" class="px-3 py-2 border border-slate-200 rounded-lg text-sm">
+              <input formControlName="title" type="text" class="gp-input" [class.gp-input-error]="editForm.controls.title.invalid && editForm.controls.title.touched" />
+              <input formControlName="description" type="text" class="gp-input" />
+              <select formControlName="status" class="gp-input">
                 <option value="A_FAIRE">To do</option>
                 <option value="EN_COURS">In progress</option>
                 <option value="TERMINE">Done</option>
               </select>
-              <select formControlName="priority" class="px-3 py-2 border border-slate-200 rounded-lg text-sm">
+              <select formControlName="priority" class="gp-input">
                 <option value="BASSE">Low</option>
                 <option value="MOYENNE">Medium</option>
                 <option value="HAUTE">High</option>
               </select>
-              <input formControlName="dueDate" type="date" class="px-3 py-2 border border-slate-200 rounded-lg text-sm" />
-              <select formControlName="assignedTo" class="px-3 py-2 border border-slate-200 rounded-lg text-sm">
+              <input formControlName="dueDate" type="date" class="gp-input" />
+              <select formControlName="assignedTo" class="gp-input">
                 <option value="">Unassigned</option>
                 @for (member of members(); track member.id) {
                   <option [value]="member.userId">{{ member.username }}</option>
@@ -66,7 +66,7 @@ import { ProjectMemberResponse } from '../../../core/models/member.model';
               <button
                 type="submit"
                 [disabled]="savingTask()"
-                class="md:col-span-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white py-2 rounded-lg text-sm font-medium"
+                class="gp-btn-primary md:col-span-2"
               >
                 Save changes
               </button>
@@ -97,12 +97,12 @@ import { ProjectMemberResponse } from '../../../core/models/member.model';
                 formControlName="content"
                 type="text"
                 placeholder="Write a comment..."
-                class="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                class="gp-input flex-1"
               />
               <button
                 type="submit"
                 [disabled]="savingComment()"
-                class="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white px-4 py-2 rounded-lg text-sm"
+                class="gp-btn-primary"
               >
                 Send
               </button>
@@ -110,7 +110,7 @@ import { ProjectMemberResponse } from '../../../core/models/member.model';
           }
 
           @if (comments().length === 0) {
-            <p class="text-sm text-slate-500">No comments yet.</p>
+            <div class="gp-empty-state min-h-28"><div class="gp-empty-icon" aria-hidden="true">◌</div><p class="text-sm font-medium text-slate-700">No comments yet</p><p class="mt-1 text-xs text-slate-500">Start the conversation about this task.</p></div>
           } @else {
             <div class="space-y-2">
               @for (comment of comments(); track comment.id) {

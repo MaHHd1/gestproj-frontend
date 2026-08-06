@@ -1,12 +1,12 @@
 # Frontend Master Plan
 
-**Last audited:** 2026-07-12  
+**Last audited:** 2026-08-03
 **Frontend:** gestproj-frontend (Angular 21)  
 **Backend checked:** gestproj-backend (local workspace)
 
 ## Current health
 
-- Build: passing (npm run build, 2026-07-12)
+- Build: passing (npm run build, 2026-08-03)
 - Routing: protected application shell with lazy-loaded pages
 - API configuration: environment-based (environment.apiUrl)
 - Error feedback: global toast notifications for network, server, and rate-limit failures
@@ -19,9 +19,12 @@
 | Register, login, current user | Complete | /auth/register, /auth/login, and /auth/me are implemented and used |
 | JWT request authentication | Complete | Bearer-token interceptor and route guards |
 | Projects | Complete | Listing, creation, details, statistics, update, and delete |
+| Repository links | Complete | Optional `repoOwner` and `repoName` are supported in project create/edit flows and displayed on linked projects |
+| Deployment history | Complete | Project Deployments tab loads `GET /projects/{projectId}/deployments`, with status, commit, trigger, timestamp, and empty/unlinked states |
+| Recent commits | Complete | Repository-linked projects load `GET /projects/{projectId}/commits` and show SHA, message, author, and relative date |
 | Tasks | Complete | List, filters, pagination, creation, editing, assignment, and detail view |
 | Task comments | Complete | List, create, and delete |
-| Project task board | Complete | GitHub-style To do, In progress, and Done columns with assignee names |
+| Project task board | Complete | GitHub-style To do, In progress, and Done columns; visual redesign in progress |
 | Project members | Complete | List and permission/role/status updates |
 | Invitations | Complete | Create, candidate user search, accept/reject token page |
 | Notifications | Complete | List, mark one read, mark all read, unread badge |
@@ -36,7 +39,7 @@
 
 ## Backend-dependent items
 
-These cannot be finished in the frontend until matching backend endpoints exist. The local backend was inspected on 2026-07-12.
+These cannot be finished in the frontend until matching backend endpoints exist. The local backend was inspected on 2026-07-12; repository, deployment, and commit endpoints were added afterwards.
 
 | Feature | Frontend state | Backend state | Required backend contract |
 |---|---|---|---|
@@ -59,6 +62,26 @@ These cannot be finished in the frontend until matching backend endpoints exist.
 4. Review whether project settings should remain owner-only or receive an explicit project-edit permission.
 5. Expand automated tests to route guards, the global error interceptor, and critical project/task flows.
 6. Add deployment documentation and CI once the API contract is stable.
+
+## Phase 4 visual design pass
+
+Scope: visual presentation only; do not change routing, service logic, or HTTP/data flow. Use the existing Tailwind setup and add no dependencies unless approved.
+
+| Area | Status | Notes |
+|---|---|---|
+| Accent color and typography | Complete | Indigo primary-action system and global heading hierarchy |
+| Task board cards | Complete | Priority badges, assignee avatars, due dates, overdue treatment, and responsive board cards |
+| Dashboard project cards | Complete | Responsive card hierarchy, repository indicator, and clearer owner/action footer; metric data was not added because this visual-only phase cannot add HTTP calls |
+| Forms | Complete | Shared input, label, button, focus, and validation-error treatment applied to primary project and task forms |
+| Notifications and toasts | Complete | Unread dot/surface treatment and semantic toast icons/colors |
+| Empty states | Complete | Tasks, notifications, members, deployments, and comments receive icon-led empty states |
+| Responsive review | Complete | Board, dashboard grid, and task forms use tablet breakpoints and wrapping layouts |
+| Repository/deployment styling | Complete | Repository badges and the deployments panel use the shared visual system |
+| Git/Gitea-first project view | Complete | Repository activity is the default project view, with a compact task-board sidebar and visible repository connection actions |
+| GitHub-style information architecture | Complete | Project navigation is ordered Repository, Full board, Details & members; the full board and collaboration panels use the monochrome repository-oriented layout |
+| Dark application theme | Complete | Main workspace uses a dark GitHub-inspired surface; the full board no longer displays filter or pagination controls |
+| Dark-theme readability pass | Complete | Login, repository activity, project configuration, member, and invitation panels use readable dark surfaces and neutral text contrast |
+| Dark authentication and forms | Complete | Register and password-reset screens follow the dark login design; shared text inputs use black surfaces with white text |
 
 ## Technical notes
 
