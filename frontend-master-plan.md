@@ -20,7 +20,7 @@
 | JWT request authentication | Complete | Bearer-token interceptor and route guards |
 | Projects | Complete | Listing, creation, details, statistics, update, and delete |
 | Repository links | Complete | Optional `repoOwner` and `repoName` are supported in project create/edit flows and displayed on linked projects |
-| Deployment history | Complete | Project Deployments tab loads `GET /projects/{projectId}/deployments`, with status, commit, trigger, timestamp, and empty/unlinked states |
+| Deployment history | Complete | Project Deployments tab lists deployment status, commit, trigger, timestamp, and empty/unlinked states from `GET /projects/{projectId}/deployments` |
 | Recent commits | Complete | Repository-linked projects load `GET /projects/{projectId}/commits` and show SHA, message, author, and relative date |
 | Tasks | Complete | List, filters, pagination, creation, editing, assignment, and detail view |
 | Task comments | Complete | List, create, and delete |
@@ -61,7 +61,18 @@ These cannot be finished in the frontend until matching backend endpoints exist.
 3. Decide and implement the project archive API and an Archived/Active project filter in the dashboard.
 4. Review whether project settings should remain owner-only or receive an explicit project-edit permission.
 5. Expand automated tests to route guards, the global error interceptor, and critical project/task flows.
-6. Add deployment documentation and CI once the API contract is stable.
+6. Render and test the optional deployment-health metadata returned by the server.
+
+## Deployment and server contract
+
+Projects may store an optional Gitea repository (`repoOwner`, `repoName`) and deployment target (`deploymentHost`, `deploymentContainer`). The project page uses these fields to explain where a service is running and to enable repository/deployment views.
+
+| Endpoint | Frontend use |
+|---|---|
+| `GET /projects/{projectId}/commits` | Displays recent commits for a linked repository. |
+| `GET /projects/{projectId}/deployments` | Displays deployment history and the latest Docker service health. |
+
+Each deployment may include `workflowName`, `workflowRunId`, `workflowUrl`, `deploymentTarget`, `dockerStatus`, and `dockerDetails`, in addition to its status, commit, trigger, and timestamps. These new server fields are optional, so the frontend must retain its current history view when they are absent.
 
 ## Phase 4 visual design pass
 
@@ -85,9 +96,9 @@ Scope: visual presentation only; do not change routing, service logic, or HTTP/d
 
 ## Technical notes
 
-- API base URL currently defaults to http://localhost:8080 in both environment files. Set the production URL before deployment.
-- Local backend CORS permits http://localhost:4200 and http://127.0.0.1:4200. Keep the deployed frontend origin in the backend CORS allowlist.
+- The development API base URL is `http://localhost:8080`; the production environment targets `http://100.83.8.6:8081`.
+- Backend CORS permits `http://localhost:4200`, `http://127.0.0.1:4200`, and the deployed frontend at `http://100.83.8.6:4200`. Keep any additional production origin in the backend allowlist.
 - User and task-assignment database IDs are kept internal to API calls; task assignment uses member names in the UI.
 - Tokens are stored in localStorage. This is the current architecture; review security requirements before production.
 - The global HTTP interceptor intentionally handles only cross-cutting errors. Feature pages continue to display specific validation and action errors.
-- Dockerfile exists, but Docker deployment has not yet been verified in this audit.
+- The Gitea Actions deployment workflow builds the frontend image, replaces the `frontend` container on `infra_infra_net`, verifies HTTP service on port 80, and records success or failure with Docker health details in the backend database.
