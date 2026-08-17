@@ -12,8 +12,8 @@ import { NotificationResponse } from '../../core/models/notification.model';
     <div class="p-8 max-w-4xl">
       <div class="flex items-center justify-between mb-6">
         <div>
-          <h1 class="text-2xl font-bold text-slate-800">Notifications</h1>
-          <p class="text-slate-500 text-sm mt-1">Invitation and member activity updates</p>
+          <h1 class="text-2xl font-bold text-white">Notifications</h1>
+          <p class="text-slate-400 text-sm mt-1">Project, invitation, member, and deployment updates</p>
         </div>
         <button
           (click)="markAllAsRead()"
@@ -44,14 +44,14 @@ import { NotificationResponse } from '../../core/models/notification.model';
             <div
               class="border rounded-xl p-4 transition-colors"
               [class.border-slate-500]="!notification.read"
-              [class.border-slate-200]="notification.read"
-              [class.bg-slate-100]="!notification.read"
-              [class.bg-white]="notification.read"
+              [class.border-slate-700]="notification.read"
+              [class.bg-slate-800]="!notification.read"
+              [class.bg-[#161b22]]="notification.read"
             >
               <div class="flex items-start justify-between gap-4">
                 <div>
-                  <p class="flex items-center gap-2 font-semibold text-slate-800">@if (!notification.read) { <span class="h-2 w-2 rounded-full bg-slate-950" aria-label="Unread"></span> }{{ notification.title }}</p>
-                  <p class="text-sm text-slate-600 mt-1">{{ notification.message }}</p>
+                  <p class="flex items-center gap-2 font-semibold text-white">@if (!notification.read) { <span class="h-2 w-2 rounded-full bg-white" aria-label="Unread"></span> }{{ notification.title }}</p>
+                  <p class="text-sm text-slate-300 mt-1">{{ notification.message }}</p>
                   <p class="text-xs text-slate-400 mt-2">{{ formatDate(notification.createdAt) }}</p>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
@@ -74,7 +74,7 @@ import { NotificationResponse } from '../../core/models/notification.model';
                     <button
                       (click)="markRead(notification.id)"
                       [disabled]="saving()"
-                      class="text-xs border border-slate-200 hover:bg-slate-50 px-2 py-1 rounded"
+                      class="text-xs border border-slate-600 text-slate-200 hover:bg-slate-800 px-2 py-1 rounded"
                     >
                       Mark read
                     </button>
@@ -84,7 +84,7 @@ import { NotificationResponse } from '../../core/models/notification.model';
             </div>
           }
           @if (visibleNotifications().length === 0) {
-            <div class="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-500">No unread notifications.</div>
+            <div class="rounded-xl border border-slate-700 bg-[#161b22] p-6 text-sm text-slate-400">No unread notifications.</div>
           }
         </div>
       }

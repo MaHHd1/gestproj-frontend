@@ -11,10 +11,10 @@ import { TaskPriority, TaskStatus } from '../../../core/models/task.model';
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   template: `
     <div class="mx-auto max-w-3xl p-8">
-      <a [routerLink]="['/projects', projectId]" class="text-sm text-indigo-600 hover:underline">Back to board</a>
-      <h1 class="mt-3 text-2xl font-bold text-slate-800">Create task</h1>
-      <p class="mt-1 text-sm text-slate-500">Add the task details, then return to the project board.</p>
-      <form [formGroup]="form" (ngSubmit)="save()" class="mt-6 space-y-5 rounded-xl border border-slate-200 bg-white p-6">
+      <a [routerLink]="['/projects', projectId]" class="text-sm text-slate-300 hover:text-white hover:underline">Back to board</a>
+      <h1 class="mt-3 text-2xl font-bold text-white">Create task</h1>
+      <p class="mt-1 text-sm text-slate-400">Add the task details, then return to the project board.</p>
+      <form [formGroup]="form" (ngSubmit)="save()" class="mt-6 space-y-5 rounded-xl border border-slate-700 bg-[#161b22] p-6">
         @if (error) { <p class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{{ error }}</p> }
         <div><label class="gp-label">Title</label><input formControlName="title" class="gp-input" [class.gp-input-error]="form.controls.title.invalid && form.controls.title.touched" />@if (form.controls.title.invalid && form.controls.title.touched) { <p class="mt-1 text-xs text-red-600">A task title is required.</p> }</div>
         <div><label class="gp-label">Description</label><textarea formControlName="description" rows="4" class="gp-input"></textarea></div>

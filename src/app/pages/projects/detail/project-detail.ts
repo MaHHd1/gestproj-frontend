@@ -9,6 +9,7 @@ import { InvitationService } from '../../../core/services/invitation.service';
 import { ActivityLogService } from '../../../core/services/activity-log.service';
 import { DeploymentService } from '../../../core/services/deployment.service';
 import { CommitService } from '../../../core/services/commit.service';
+import { WorkflowService } from '../../../core/services/workflow.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { UserService } from '../../../core/services/user.service';
 import { ProjectResponse, ProjectStatisticsResponse } from '../../../core/models/project.model';
@@ -23,6 +24,7 @@ import { ProjectInvitationResponse } from '../../../core/models/invitation.model
 import { ActivityLogResponse } from '../../../core/models/activity-log.model';
 import { DeploymentResponse } from '../../../core/models/deployment.model';
 import { CommitResponse } from '../../../core/models/commit.model';
+import { WorkflowJobResponse, WorkflowRunResponse } from '../../../core/models/workflow.model';
 import { UserResponse } from '../../../core/models/user.model';
 
 @Component({
@@ -54,7 +56,15 @@ import { UserResponse } from '../../../core/models/user.model';
         <div class="mb-6 flex items-center gap-1 overflow-x-auto border-b border-slate-700">
           <button (click)="activeSection.set('deployments')"
             [class]="activeSection() === 'deployments' ? 'border-b-2 border-white px-4 py-3 text-sm font-semibold text-white' : 'px-4 py-3 text-sm text-slate-400 hover:text-white'">
-            Repository
+            Deployments
+          </button>
+          <button (click)="activeSection.set('commits')"
+            [class]="activeSection() === 'commits' ? 'border-b-2 border-white px-4 py-3 text-sm font-semibold text-white' : 'px-4 py-3 text-sm text-slate-400 hover:text-white'">
+            Commits
+          </button>
+          <button (click)="activeSection.set('workflows')"
+            [class]="activeSection() === 'workflows' ? 'border-b-2 border-white px-4 py-3 text-sm font-semibold text-white' : 'px-4 py-3 text-sm text-slate-400 hover:text-white'">
+            Workflows
           </button>
           <button (click)="activeSection.set('board')"
             [class]="activeSection() === 'board' ? 'border-b-2 border-white px-4 py-3 text-sm font-semibold text-white' : 'px-4 py-3 text-sm text-slate-400 hover:text-white'">
@@ -300,6 +310,31 @@ import { UserResponse } from '../../../core/models/user.model';
                   }
                 </div>
               }
+            </div>
+          </section>
+          }
+
+          @if (activeSection() === 'commits') {
+          <section class="xl:col-span-3">
+            <div class="rounded-xl border border-slate-700 bg-[#161b22] p-5 shadow-sm">
+              <h2 class="font-semibold text-white">Recent commits</h2>
+              <p class="mt-1 text-sm text-slate-400">Latest changes from {{ linkedRepository() || 'the linked repository' }}.</p>
+              @if (!hasLinkedRepository()) { <p class="mt-5 text-sm text-slate-400">Link a Gitea repository in project details to view commits.</p> }
+              @else if (loadingCommits()) { <p class="mt-5 text-sm text-slate-400">Loading commits...</p> }
+              @else if (commits().length === 0) { <p class="mt-5 text-sm text-slate-400">No recent commits found.</p> }
+              @else { <ul class="mt-5 divide-y divide-slate-700">@for (commit of commits(); track commit.sha) { <li class="flex flex-col gap-1 py-3 sm:flex-row sm:justify-between sm:gap-4"><div><p class="font-medium text-slate-100">{{ commit.message || 'No commit message' }}</p><p class="mt-1 font-mono text-xs text-slate-400">{{ shortCommitHash(commit.sha) }}</p></div><p class="text-xs text-slate-400">{{ commit.authorName || 'Unknown author' }} · {{ relativeTimeFromNow(commit.date) }}</p></li> }</ul> }
+            </div>
+          </section>
+          }
+
+          @if (activeSection() === 'workflows') {
+          <section class="xl:col-span-3">
+            <div class="rounded-xl border border-slate-700 bg-[#161b22] p-5 shadow-sm">
+              <div class="flex items-start justify-between gap-3"><div><h2 class="font-semibold text-white">Gitea Actions workflows</h2><p class="mt-1 text-sm text-slate-400">Run status, commits, job progress, and live job logs.</p></div><button type="button" (click)="loadWorkflows()" class="rounded-md border border-slate-600 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800">Refresh</button></div>
+              @if (!hasLinkedRepository()) { <p class="mt-5 text-sm text-slate-400">Link a Gitea repository in project details to view workflows.</p> }
+              @else if (loadingWorkflows()) { <p class="mt-5 text-sm text-slate-400">Loading workflow runs...</p> }
+              @else if (workflowRuns().length === 0) { <p class="mt-5 text-sm text-slate-400">No workflow runs found.</p> }
+              @else { <div class="mt-5 space-y-3">@for (run of workflowRuns(); track run.id) { <article class="rounded-lg border border-slate-700 bg-[#0d1117] p-4"><div class="flex flex-wrap items-start justify-between gap-3"><div><p class="font-medium text-white">{{ run.name || 'Workflow run' }}</p><p class="mt-1 text-sm text-slate-300">{{ run.commitMessage || 'No commit message' }}</p><p class="mt-1 font-mono text-xs text-slate-500">{{ shortCommitHash(run.commitHash || '') }} · {{ run.author || 'Unknown author' }} · {{ run.branch || 'Unknown branch' }}</p></div><span [class]="workflowBadgeClass(run)">{{ workflowState(run) }}</span></div><div class="mt-3 flex items-center gap-3 text-xs text-slate-400"><span>{{ relativeTimeFromNow(run.createdAt || '') }}</span><button type="button" (click)="toggleWorkflowJobs(run.id)" class="text-slate-200 hover:text-white hover:underline">{{ selectedRunId() === run.id ? 'Hide jobs' : 'View jobs' }}</button></div>@if (selectedRunId() === run.id) { <div class="mt-3 border-t border-slate-700 pt-3">@if (loadingJobs()) { <p class="text-sm text-slate-400">Loading jobs...</p> } @else { @for (job of workflowJobs(); track job.id) { <div class="flex items-center justify-between gap-3 py-2"><span class="text-sm text-slate-200">{{ job.name }}</span><div class="flex items-center gap-3"><span [class]="workflowBadgeClass(job)">{{ workflowState(job) }}</span><button type="button" (click)="viewLogs(run.id, job.id)" class="text-xs text-slate-300 hover:text-white hover:underline">Logs</button></div></div> } } @if (workflowLogs()) { <pre class="mt-3 max-h-80 overflow-auto rounded bg-black p-3 text-xs text-slate-300">{{ workflowLogs() }}</pre> }</div> }</article> }</div> }
             </div>
           </section>
           }
@@ -597,6 +632,7 @@ export class ProjectDetailComponent implements OnInit {
   private activityLogService = inject(ActivityLogService);
   private deploymentService = inject(DeploymentService);
   private commitService = inject(CommitService);
+  private workflowService = inject(WorkflowService);
   private userService = inject(UserService);
 
   projectId = signal<number | null>(null);
@@ -608,10 +644,16 @@ export class ProjectDetailComponent implements OnInit {
   activityLogs = signal<ActivityLogResponse[]>([]);
   deployments = signal<DeploymentResponse[]>([]);
   commits = signal<CommitResponse[]>([]);
+  workflowRuns = signal<WorkflowRunResponse[]>([]);
+  workflowJobs = signal<WorkflowJobResponse[]>([]);
+  workflowLogs = signal('');
+  selectedRunId = signal<number | null>(null);
   inviteCandidates = signal<UserResponse[]>([]);
   searchingInviteCandidates = signal(false);
   loadingDeployments = signal(false);
   loadingCommits = signal(false);
+  loadingWorkflows = signal(false);
+  loadingJobs = signal(false);
   loading = signal(true);
   error = signal('');
   actionError = signal('');
@@ -626,7 +668,7 @@ export class ProjectDetailComponent implements OnInit {
   taskPage = signal(0);
   taskTotalPages = signal(0);
   taskTotalElements = signal(0);
-  activeSection = signal<'board' | 'details' | 'deployments'>('deployments');
+  activeSection = signal<'board' | 'details' | 'deployments' | 'commits' | 'workflows'>('deployments');
   managingMembers = signal(false);
 
   memberDrafts: Record<number, ProjectMemberUpdateRequest> = {};
@@ -913,9 +955,11 @@ export class ProjectDetailComponent implements OnInit {
           if (this.hasLinkedRepository()) {
             this.loadDeployments();
             this.loadCommits();
+            this.loadWorkflows();
           } else {
             this.deployments.set([]);
             this.commits.set([]);
+            this.workflowRuns.set([]);
           }
           this.savingProjectSettings.set(false);
           this.setActionError('');
@@ -1170,9 +1214,11 @@ export class ProjectDetailComponent implements OnInit {
         if (this.hasLinkedRepository()) {
           this.loadDeployments();
           this.loadCommits();
+          this.loadWorkflows();
         } else {
           this.deployments.set([]);
           this.commits.set([]);
+          this.workflowRuns.set([]);
         }
         this.loading.set(false);
       },
@@ -1269,6 +1315,50 @@ export class ProjectDetailComponent implements OnInit {
         this.loadingCommits.set(false);
       }
     });
+  }
+
+  loadWorkflows(): void {
+    const id = this.projectId();
+    if (!id || !this.hasLinkedRepository()) return;
+    this.loadingWorkflows.set(true);
+    this.workflowService.runs(id).subscribe({
+      next: runs => { this.workflowRuns.set(runs); this.loadingWorkflows.set(false); },
+      error: err => { this.setActionError(err.error?.message ?? 'Unable to load workflow runs.'); this.loadingWorkflows.set(false); }
+    });
+  }
+
+  toggleWorkflowJobs(runId: number): void {
+    if (this.selectedRunId() === runId) { this.selectedRunId.set(null); this.workflowLogs.set(''); return; }
+    const id = this.projectId();
+    if (!id) return;
+    this.selectedRunId.set(runId);
+    this.workflowLogs.set('');
+    this.loadingJobs.set(true);
+    this.workflowService.jobs(id, runId).subscribe({
+      next: jobs => { this.workflowJobs.set(jobs); this.loadingJobs.set(false); },
+      error: err => { this.setActionError(err.error?.message ?? 'Unable to load workflow jobs.'); this.loadingJobs.set(false); }
+    });
+  }
+
+  viewLogs(runId: number, jobId: number): void {
+    const id = this.projectId();
+    if (!id) return;
+    this.workflowLogs.set('Loading logs...');
+    this.workflowService.logs(id, runId, jobId).subscribe({
+      next: logs => this.workflowLogs.set(logs || 'No logs are available for this job.'),
+      error: err => this.workflowLogs.set(err.error?.message ?? 'Unable to load workflow logs.')
+    });
+  }
+
+  workflowState(item: WorkflowRunResponse | WorkflowJobResponse): string {
+    return item.conclusion || item.status || 'UNKNOWN';
+  }
+
+  workflowBadgeClass(item: WorkflowRunResponse | WorkflowJobResponse): string {
+    const state = this.workflowState(item).toUpperCase();
+    if (state === 'SUCCESS' || state === 'COMPLETED') return 'rounded-full bg-emerald-950 px-2 py-0.5 text-xs font-medium text-emerald-300';
+    if (state === 'FAILURE' || state === 'FAILED' || state === 'CANCELLED') return 'rounded-full bg-red-950 px-2 py-0.5 text-xs font-medium text-red-300';
+    return 'rounded-full bg-amber-950 px-2 py-0.5 text-xs font-medium text-amber-300';
   }
 
   private setActionError(message: string): void {

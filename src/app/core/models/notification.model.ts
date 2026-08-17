@@ -3,7 +3,9 @@ export type NotificationType =
   | 'INVITATION_ACCEPTED'
   | 'INVITATION_REJECTED'
   | 'MEMBER_UPDATED'
-  | 'MEMBER_STATUS_CHANGED';
+  | 'MEMBER_STATUS_CHANGED'
+  | 'DEPLOYMENT_FAILED'
+  | 'DEPLOYMENT_SUCCEEDED';
 
 export interface NotificationResponse {
   id: number;
