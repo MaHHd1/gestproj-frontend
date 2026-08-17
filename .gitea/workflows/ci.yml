@@ -8,6 +8,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   test:
@@ -27,7 +28,7 @@ jobs:
         run: npm ci
 
       - name: Executer les tests unitaires
-        run: npm test -- --watch=false --browsers=ChromeHeadless
+        run: npm test -- --watch=false --no-watch
 
       - name: Verifier que le build de production fonctionne
         run: npm run build
