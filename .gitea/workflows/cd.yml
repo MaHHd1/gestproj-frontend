@@ -1,4 +1,4 @@
-name: CD - Validation du build Docker
+name: CD - Deploy frontend
 
 on:
   push:
@@ -19,8 +19,25 @@ jobs:
           apt-get update
           apt-get install -y docker.io
 
-      - name: Construire l'image Docker
-        run: docker build -t gestproj-frontend:ci-check .
+      - name: Build and replace frontend
+        run: |
+          docker build -t infra-frontend:latest .
+          docker rm -f frontend || true
+          docker run -d --name frontend --restart unless-stopped --network infra_infra_net -p 4200:80 infra-frontend:latest
 
-      - name: Confirmer que l'image a ete creee
-        run: docker images gestproj-frontend:ci-check
+      - name: Verify frontend service
+        run: |
+          for i in $(seq 1 20); do
+            docker run --rm --network infra_infra_net curlimages/curl:8.10.1 -fsS http://frontend:80/ && exit 0
+            sleep 3
+          done
+          docker logs frontend
+          exit 1
+
+      - name: Record deployment success
+        if: success()
+        run: docker exec postgres psql -U admin -d gestproj -c "INSERT INTO deployments (project_id, status, commit_hash, commit_message, triggered_by, started_at, finished_at, workflow_name, workflow_run_id, deployment_target, docker_status, docker_details) VALUES (1, 'SUCCESS', '${{ github.sha }}', 'Frontend deployed by Gitea Actions', '${{ github.actor }}', NOW(), NOW(), 'CD - Deploy frontend', '${{ github.run_id }}', '100.83.8.6 / frontend', 'HEALTHY', 'Frontend container responded successfully');"
+
+      - name: Record deployment failure
+        if: failure()
+        run: docker exec postgres psql -U admin -d gestproj -c "INSERT INTO deployments (project_id, status, commit_hash, commit_message, triggered_by, started_at, finished_at, workflow_name, workflow_run_id, deployment_target, docker_status, docker_details) VALUES (1, 'FAILURE', '${{ github.sha }}', 'Frontend deployment failed in Gitea Actions', '${{ github.actor }}', NOW(), NOW(), 'CD - Deploy frontend', '${{ github.run_id }}', '100.83.8.6 / frontend', 'UNHEALTHY', 'Workflow failed before the frontend health check completed');"

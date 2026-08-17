@@ -1235,7 +1235,7 @@ export class ProjectDetailComponent implements OnInit {
     this.invitationService.list(id).subscribe({
       next: invitations => this.invitations.set(invitations),
       error: err => {
-        this.setActionError(err.error?.message ?? 'Unable to load project invitations.');
+        this.setActionError(this.requestErrorMessage(err, 'Unable to load project invitations.'));
       }
     });
 
@@ -1363,6 +1363,13 @@ export class ProjectDetailComponent implements OnInit {
 
   private setActionError(message: string): void {
     this.actionError.set(message);
+  }
+
+  private requestErrorMessage(error: { status?: number; error?: { message?: string } }, fallback: string): string {
+    if (error.error?.message) return error.error.message;
+    if (error.status === 401) return 'Your session has expired. Please sign in again.';
+    if (error.status === 403) return 'You do not have permission to view this project’s invitations.';
+    return fallback;
   }
 
   private toMemberUpdateRequest(member: ProjectMemberResponse): ProjectMemberUpdateRequest {
