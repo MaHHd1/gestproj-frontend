@@ -25,23 +25,23 @@ export class AuthService {
   }
 
   register(body: RegisterRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${API}/auth/register`, body).pipe(
+    return this.http.post<AuthResponse>(`${API}/api/auth/register`, body).pipe(
       tap(res => this.saveSession(res))
     );
   }
 
   login(body: LoginRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${API}/auth/login`, body).pipe(
+    return this.http.post<AuthResponse>(`${API}/api/auth/login`, body).pipe(
       tap(res => this.saveSession(res))
     );
   }
 
   requestPasswordReset(email: string): Observable<void> {
-    return this.http.post<void>(`${API}/auth/forgot-password`, { email });
+    return this.http.post<void>(`${API}/api/auth/forgot-password`, { email });
   }
 
   me(): Observable<UserResponse> {
-    return this.http.get<UserResponse>(`${API}/auth/me`).pipe(
+    return this.http.get<UserResponse>(`${API}/api/auth/me`).pipe(
       tap(user => {
         this.currentUser.set(user);
         localStorage.setItem('user', JSON.stringify(user));

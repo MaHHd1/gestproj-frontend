@@ -38,7 +38,7 @@ describe('AuthService', () => {
     };
 
     service.login({ email: response.user.email, password: 'secret' }).subscribe();
-    const request = http.expectOne(`${environment.apiUrl}/auth/login`);
+    const request = http.expectOne(`${environment.apiUrl}/api/auth/login`);
     expect(request.request.method).toBe('POST');
     request.flush(response);
 
@@ -64,7 +64,7 @@ describe('AuthService', () => {
     const user = { id: 1, email: 'ada@example.com', username: 'ada', name: 'Ada', profileImageUrl: null };
 
     service.me().subscribe(result => expect(result).toEqual(user));
-    http.expectOne(`${environment.apiUrl}/auth/me`).flush(user);
+    http.expectOne(`${environment.apiUrl}/api/auth/me`).flush(user);
 
     expect(service.currentUser()).toEqual(user);
     expect(JSON.parse(localStorage.getItem('user') ?? '{}')).toEqual(user);
