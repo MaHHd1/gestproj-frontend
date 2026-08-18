@@ -24,7 +24,7 @@ import { ProjectInvitationResponse } from '../../../core/models/invitation.model
 import { ActivityLogResponse } from '../../../core/models/activity-log.model';
 import { DeploymentResponse } from '../../../core/models/deployment.model';
 import { CommitResponse } from '../../../core/models/commit.model';
-import { WorkflowJobResponse, WorkflowRunResponse } from '../../../core/models/workflow.model';
+import { WorkflowJobResponse, WorkflowRunResponse, WorkflowStepResponse } from '../../../core/models/workflow.model';
 import { UserResponse } from '../../../core/models/user.model';
 
 @Component({
@@ -269,7 +269,7 @@ import { UserResponse } from '../../../core/models/user.model';
                     </thead>
                     <tbody>
                       @for (deployment of deployments(); track deployment.id) {
-                        <tr class="border-b border-slate-700 last:border-0">
+                        <tr (click)="toggleDeploymentDetails(deployment)" class="cursor-pointer border-b border-slate-700 last:border-0 hover:bg-slate-800/60">
                           <td class="py-3 pr-4">
                             <span [class]="deployment.status === 'SUCCESS' ? 'inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700' : 'inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700'">
                               {{ deployment.status }}
@@ -286,9 +286,17 @@ import { UserResponse } from '../../../core/models/user.model';
                     </tbody>
                   </table>
                 </div>
+                @if (selectedDeployment()) {
+                  <div class="mt-4 rounded-lg border border-slate-700 bg-[#0d1117] p-4 text-sm">
+                    <div class="flex items-start justify-between gap-4"><div><p class="font-semibold text-white">Deployment details</p><p class="mt-1 text-slate-300">{{ selectedDeployment()!.commitMessage || 'No commit message' }}</p></div><button type="button" (click)="selectedDeployment.set(null)" class="text-xs text-slate-400 hover:text-white">Close</button></div>
+                    <dl class="mt-4 grid gap-3 sm:grid-cols-2"><div><dt class="text-xs uppercase tracking-wide text-slate-500">Workflow</dt><dd class="mt-1 text-slate-200">{{ selectedDeployment()!.workflowName || 'Not recorded' }}</dd></div><div><dt class="text-xs uppercase tracking-wide text-slate-500">Run ID</dt><dd class="mt-1 font-mono text-slate-200">{{ selectedDeployment()!.workflowRunId || 'Not recorded' }}</dd></div><div><dt class="text-xs uppercase tracking-wide text-slate-500">Target</dt><dd class="mt-1 text-slate-200">{{ selectedDeployment()!.deploymentTarget || 'Not recorded' }}</dd></div><div><dt class="text-xs uppercase tracking-wide text-slate-500">Docker status</dt><dd class="mt-1 text-slate-200">{{ selectedDeployment()!.dockerStatus || 'Not recorded' }}</dd></div><div><dt class="text-xs uppercase tracking-wide text-slate-500">Started</dt><dd class="mt-1 text-slate-200">{{ formatDate(selectedDeployment()!.startedAt) }}</dd></div><div><dt class="text-xs uppercase tracking-wide text-slate-500">Finished</dt><dd class="mt-1 text-slate-200">{{ selectedDeployment()!.finishedAt ? formatDate(selectedDeployment()!.finishedAt!) : 'In progress' }}</dd></div></dl>
+                    @if (selectedDeployment()!.dockerDetails) { <pre class="mt-4 max-h-56 overflow-auto rounded bg-black p-3 text-xs text-slate-300">{{ selectedDeployment()!.dockerDetails }}</pre> }
+                    @if (selectedDeployment()!.workflowUrl) { <a [href]="selectedDeployment()!.workflowUrl" target="_blank" rel="noopener" class="mt-4 inline-block text-xs text-slate-200 hover:text-white hover:underline">Open workflow in Gitea</a> }
+                  </div>
+                }
               }
 
-              @if (hasLinkedRepository()) {
+              @if (false && hasLinkedRepository()) {
                 <div class="mt-6 border-t border-slate-700 pt-5">
                   <h2 class="mb-3 font-semibold text-slate-100">Recent commits</h2>
                   @if (loadingCommits()) {
@@ -334,7 +342,7 @@ import { UserResponse } from '../../../core/models/user.model';
               @if (!hasLinkedRepository()) { <p class="mt-5 text-sm text-slate-400">Link a Gitea repository in project details to view workflows.</p> }
               @else if (loadingWorkflows()) { <p class="mt-5 text-sm text-slate-400">Loading workflow runs...</p> }
               @else if (workflowRuns().length === 0) { <p class="mt-5 text-sm text-slate-400">No workflow runs found.</p> }
-              @else { <div class="mt-5 space-y-3">@for (run of workflowRuns(); track run.id) { <article class="rounded-lg border border-slate-700 bg-[#0d1117] p-4"><div class="flex flex-wrap items-start justify-between gap-3"><div><p class="font-medium text-white">{{ run.name || 'Workflow run' }}</p><p class="mt-1 text-sm text-slate-300">{{ run.commitMessage || 'No commit message' }}</p><p class="mt-1 font-mono text-xs text-slate-500">{{ shortCommitHash(run.commitHash || '') }} · {{ run.author || 'Unknown author' }} · {{ run.branch || 'Unknown branch' }}</p></div><span [class]="workflowBadgeClass(run)">{{ workflowState(run) }}</span></div><div class="mt-3 flex items-center gap-3 text-xs text-slate-400"><span>{{ relativeTimeFromNow(run.createdAt || '') }}</span><button type="button" (click)="toggleWorkflowJobs(run.id)" class="text-slate-200 hover:text-white hover:underline">{{ selectedRunId() === run.id ? 'Hide jobs' : 'View jobs' }}</button></div>@if (selectedRunId() === run.id) { <div class="mt-3 border-t border-slate-700 pt-3">@if (loadingJobs()) { <p class="text-sm text-slate-400">Loading jobs...</p> } @else { @for (job of workflowJobs(); track job.id) { <div class="flex items-center justify-between gap-3 py-2"><span class="text-sm text-slate-200">{{ job.name }}</span><div class="flex items-center gap-3"><span [class]="workflowBadgeClass(job)">{{ workflowState(job) }}</span><button type="button" (click)="viewLogs(run.id, job.id)" class="text-xs text-slate-300 hover:text-white hover:underline">Logs</button></div></div> } } @if (workflowLogs()) { <pre class="mt-3 max-h-80 overflow-auto rounded bg-black p-3 text-xs text-slate-300">{{ workflowLogs() }}</pre> }</div> }</article> }</div> }
+              @else { <div class="mt-5 space-y-3">@for (run of workflowRuns(); track run.id) { <article class="rounded-lg border border-slate-700 bg-[#0d1117] p-4"><div class="flex flex-wrap items-start justify-between gap-3"><div><p class="font-medium text-white">{{ workflowLabel(run) }}</p><p class="mt-1 text-sm text-slate-300">{{ run.commitMessage || 'No commit message' }}</p><p class="mt-1 font-mono text-xs text-slate-500">{{ shortCommitHash(run.commitHash || '') }} · {{ run.author || 'Unknown author' }} · {{ run.branch || 'Unknown branch' }}</p></div><span [class]="workflowBadgeClass(run)">{{ workflowState(run) }}</span></div><div class="mt-3 flex items-center gap-3 text-xs text-slate-400"><span>{{ relativeTimeFromNow(run.createdAt || '') }}</span><button type="button" (click)="toggleWorkflowJobs(run.id)" class="text-slate-200 hover:text-white hover:underline">{{ selectedRunId() === run.id ? 'Hide jobs' : 'View jobs' }}</button></div>@if (selectedRunId() === run.id) { <div class="mt-3 border-t border-slate-700 pt-3">@if (loadingJobs()) { <p class="text-sm text-slate-400">Loading jobs...</p> } @else { @for (job of workflowJobs(); track job.id) { <div class="py-2"><div class="flex items-center justify-between gap-3"><span class="text-sm text-slate-200">{{ job.name }}</span><div class="flex items-center gap-3"><span [class]="workflowBadgeClass(job)">{{ workflowState(job) }}</span><button type="button" (click)="viewLogs(run.id, job.id)" class="text-xs text-slate-300 hover:text-white hover:underline">Logs</button></div></div><div class="mt-2 space-y-1 border-l border-slate-700 pl-3">@for (step of job.steps; track step.number) { <div class="flex items-center justify-between gap-3 text-xs"><span class="text-slate-300">{{ step.name }}</span><span class="flex items-center gap-2"><span [class]="workflowBadgeClass(step)">{{ workflowState(step) }}</span><span class="text-slate-500">{{ workflowDuration(step.startedAt, step.completedAt) }}</span></span></div> }</div></div> } } @if (workflowLogs()) { <pre class="mt-3 max-h-80 overflow-auto rounded bg-black p-3 text-xs text-slate-300">{{ workflowLogs() }}</pre> }</div> }</article> }</div> }
             </div>
           </section>
           }
@@ -643,6 +651,7 @@ export class ProjectDetailComponent implements OnInit {
   invitations = signal<ProjectInvitationResponse[]>([]);
   activityLogs = signal<ActivityLogResponse[]>([]);
   deployments = signal<DeploymentResponse[]>([]);
+  selectedDeployment = signal<DeploymentResponse | null>(null);
   commits = signal<CommitResponse[]>([]);
   workflowRuns = signal<WorkflowRunResponse[]>([]);
   workflowJobs = signal<WorkflowJobResponse[]>([]);
@@ -1350,15 +1359,32 @@ export class ProjectDetailComponent implements OnInit {
     });
   }
 
-  workflowState(item: WorkflowRunResponse | WorkflowJobResponse): string {
+  workflowState(item: WorkflowRunResponse | WorkflowJobResponse | WorkflowStepResponse): string {
     return item.conclusion || item.status || 'UNKNOWN';
   }
 
-  workflowBadgeClass(item: WorkflowRunResponse | WorkflowJobResponse): string {
+  workflowBadgeClass(item: WorkflowRunResponse | WorkflowJobResponse | WorkflowStepResponse): string {
     const state = this.workflowState(item).toUpperCase();
     if (state === 'SUCCESS' || state === 'COMPLETED') return 'rounded-full bg-emerald-950 px-2 py-0.5 text-xs font-medium text-emerald-300';
     if (state === 'FAILURE' || state === 'FAILED' || state === 'CANCELLED') return 'rounded-full bg-red-950 px-2 py-0.5 text-xs font-medium text-red-300';
     return 'rounded-full bg-amber-950 px-2 py-0.5 text-xs font-medium text-amber-300';
+  }
+
+  workflowLabel(run: WorkflowRunResponse): string {
+    if (run.workflowPath) {
+      return run.workflowPath.split('@')[0].replace(/^.*\//, '').replace(/\.ya?ml$/, '');
+    }
+    return run.name || 'Workflow run';
+  }
+
+  workflowDuration(startedAt: string | null, completedAt: string | null): string {
+    if (!startedAt || !completedAt) return '';
+    const seconds = Math.max(0, Math.round((new Date(completedAt).getTime() - new Date(startedAt).getTime()) / 1000));
+    return seconds < 60 ? `${seconds}s` : `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+  }
+
+  toggleDeploymentDetails(deployment: DeploymentResponse): void {
+    this.selectedDeployment.set(this.selectedDeployment()?.id === deployment.id ? null : deployment);
   }
 
   private setActionError(message: string): void {

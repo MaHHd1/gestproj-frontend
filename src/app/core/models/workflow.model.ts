@@ -7,9 +7,19 @@ export interface WorkflowRunResponse {
   commitMessage: string | null;
   author: string | null;
   branch: string | null;
+  workflowPath: string | null;
   createdAt: string | null;
   updatedAt: string | null;
   htmlUrl: string | null;
+}
+
+export interface WorkflowStepResponse {
+  number: number | null;
+  name: string | null;
+  status: string | null;
+  conclusion: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
 }
 
 export interface WorkflowJobResponse {
@@ -20,4 +30,5 @@ export interface WorkflowJobResponse {
   startedAt: string | null;
   completedAt: string | null;
   htmlUrl: string | null;
+  steps: WorkflowStepResponse[];
 }

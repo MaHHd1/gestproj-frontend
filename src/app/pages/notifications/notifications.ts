@@ -27,9 +27,9 @@ import { NotificationResponse } from '../../core/models/notification.model';
       @if (loading()) {
         <div class="text-slate-500">Loading notifications...</div>
       } @else if (notifications().length === 0) {
-        <div class="gp-empty-state text-slate-500">
+        <div class="flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-slate-700 bg-[#161b22] p-6 text-center text-slate-400">
           <div class="gp-empty-icon" aria-hidden="true">✦</div>
-          <p class="font-medium text-slate-700">No notifications yet</p>
+          <p class="font-medium text-slate-200">No notifications yet</p>
           <p class="mt-1 text-sm">Updates from your projects will appear here.</p>
         </div>
       } @else {

@@ -1,4 +1,4 @@
-export type DeploymentStatus = 'SUCCESS' | 'FAILURE';
+export type DeploymentStatus = 'SUCCESS' | 'FAILURE' | 'RUNNING' | 'PENDING';
 
 export interface DeploymentResponse {
   id: number;
@@ -8,4 +8,11 @@ export interface DeploymentResponse {
   triggeredBy: string;
   startedAt: string;
   finishedAt: string | null;
+  projectId: number;
+  workflowName: string | null;
+  workflowRunId: string | null;
+  workflowUrl: string | null;
+  deploymentTarget: string | null;
+  dockerStatus: string | null;
+  dockerDetails: string | null;
 }
