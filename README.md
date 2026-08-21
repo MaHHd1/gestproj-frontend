@@ -32,3 +32,4 @@ Deployment records include the status, commit, trigger, and timestamps. Where su
 The production environment points to `http://100.83.8.6:8081`. The backend CORS configuration must allow the frontend origin `http://100.83.8.6:4200` (and any additional production origin).
 
 The Gitea Actions deployment workflow builds the Docker image, replaces the `frontend` container on `infra_infra_net`, verifies the HTTP service on port 80, and records the outcome in the backend deployment history.
+Aa

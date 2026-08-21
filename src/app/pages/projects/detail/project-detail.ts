@@ -54,23 +54,23 @@ import { UserResponse } from '../../../core/models/user.model';
         </div>
 
         <div class="mb-6 flex items-center gap-1 overflow-x-auto border-b border-slate-700">
-          <button (click)="activeSection.set('deployments')"
+          <button (click)="selectSection('deployments')"
             [class]="activeSection() === 'deployments' ? 'border-b-2 border-white px-4 py-3 text-sm font-semibold text-white' : 'px-4 py-3 text-sm text-slate-400 hover:text-white'">
             Deployments
           </button>
-          <button (click)="activeSection.set('commits')"
+          <button (click)="selectSection('commits')"
             [class]="activeSection() === 'commits' ? 'border-b-2 border-white px-4 py-3 text-sm font-semibold text-white' : 'px-4 py-3 text-sm text-slate-400 hover:text-white'">
             Commits
           </button>
-          <button (click)="activeSection.set('workflows')"
+          <button (click)="selectSection('workflows')"
             [class]="activeSection() === 'workflows' ? 'border-b-2 border-white px-4 py-3 text-sm font-semibold text-white' : 'px-4 py-3 text-sm text-slate-400 hover:text-white'">
             Workflows
           </button>
-          <button (click)="activeSection.set('board')"
+          <button (click)="selectSection('board')"
             [class]="activeSection() === 'board' ? 'border-b-2 border-white px-4 py-3 text-sm font-semibold text-white' : 'px-4 py-3 text-sm text-slate-400 hover:text-white'">
             Full board
           </button>
-          <button (click)="activeSection.set('details')"
+          <button (click)="selectSection('details')"
             [class]="activeSection() === 'details' ? 'border-b-2 border-white px-4 py-3 text-sm font-semibold text-white' : 'px-4 py-3 text-sm text-slate-400 hover:text-white'">
             Details & members
           </button>
@@ -187,7 +187,7 @@ import { UserResponse } from '../../../core/models/user.model';
                           [class.bg-red-950]="task.late"
                           class="group overflow-hidden rounded-md border border-slate-700 bg-[#161b22] shadow-sm transition duration-150 hover:border-slate-400 hover:shadow-md active:cursor-grabbing"
                         >
-                          <a [routerLink]="['/tasks', task.id]" class="block p-3.5">
+                          <a [routerLink]="['/tasks', task.id]" [queryParams]="{ returnTo: 'board' }" class="block p-3.5">
                             <div class="flex items-start justify-between gap-3">
                               <p class="line-clamp-2 text-sm font-semibold leading-5 text-white group-hover:underline">{{ task.title }}</p>
                               <span [class]="priorityBadgeClass(task.priority)">{{ task.priority }}</span>
@@ -269,7 +269,7 @@ import { UserResponse } from '../../../core/models/user.model';
                     </thead>
                     <tbody>
                       @for (deployment of deployments(); track deployment.id) {
-                        <tr (click)="toggleDeploymentDetails(deployment)" class="cursor-pointer border-b border-slate-700 last:border-0 hover:bg-slate-800/60">
+                        <tr (click)="toggleDeploymentDetails(deployment)" [class]="selectedDeployment()?.id === deployment.id ? 'cursor-pointer border-b-0 border-slate-700 bg-slate-800/80' : 'cursor-pointer border-b border-slate-700 hover:bg-slate-800/60'">
                           <td class="py-3 pr-4">
                             <span [class]="deployment.status === 'SUCCESS' ? 'inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700' : 'inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700'">
                               {{ deployment.status }}
@@ -282,18 +282,31 @@ import { UserResponse } from '../../../core/models/user.model';
                           <td class="py-3 pr-4 text-slate-300">{{ deployment.triggeredBy }}</td>
                           <td class="py-3 text-slate-400">{{ relativeTimeFromNow(deployment.finishedAt || deployment.startedAt) }}</td>
                         </tr>
+                        @if (selectedDeployment()?.id === deployment.id) {
+                          <tr class="border-b border-slate-700 bg-[#0d1117]">
+                            <td colspan="4" class="p-3 sm:p-4">
+                              <section class="overflow-hidden rounded-lg border border-slate-700 bg-[#161b22] shadow-inner">
+                                <header class="flex flex-wrap items-start justify-between gap-3 border-b border-slate-700 bg-slate-800/60 px-4 py-3">
+                                  <div class="min-w-0"><p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Deployment details</p><p class="mt-1 truncate font-medium text-white">{{ deployment.commitMessage || 'No commit message' }}</p></div>
+                                  <div class="flex items-center gap-3"><span [class]="deployment.status === 'SUCCESS' ? 'rounded-full bg-emerald-950 px-2.5 py-1 text-xs font-semibold text-emerald-300' : 'rounded-full bg-red-950 px-2.5 py-1 text-xs font-semibold text-red-300'">{{ deployment.status }}</span><button type="button" (click)="toggleDeploymentDetails(deployment); $event.stopPropagation()" class="text-xs font-medium text-slate-400 hover:text-white">Close</button></div>
+                                </header>
+                                <div class="grid gap-px bg-slate-700 sm:grid-cols-2 lg:grid-cols-3">
+                                  <div class="bg-[#161b22] p-3"><p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Workflow</p><p class="mt-1 truncate text-sm font-medium text-slate-100">{{ deployment.workflowName || 'Not recorded' }}</p></div>
+                                  <div class="bg-[#161b22] p-3"><p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Run ID</p><p class="mt-1 font-mono text-sm text-slate-200">{{ deployment.workflowRunId || 'Not recorded' }}</p></div>
+                                  <div class="bg-[#161b22] p-3"><p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Target</p><p class="mt-1 text-sm text-slate-200">{{ deployment.deploymentTarget || 'Not recorded' }}</p></div>
+                                  <div class="bg-[#161b22] p-3"><p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Docker status</p><p class="mt-1 text-sm font-semibold" [class.text-emerald-300]="deployment.dockerStatus === 'HEALTHY'" [class.text-slate-200]="deployment.dockerStatus !== 'HEALTHY'">{{ deployment.dockerStatus || 'Not recorded' }}</p></div>
+                                  <div class="bg-[#161b22] p-3"><p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Started</p><p class="mt-1 text-sm text-slate-200">{{ formatDate(deployment.startedAt) }}</p></div>
+                                  <div class="bg-[#161b22] p-3"><p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Finished</p><p class="mt-1 text-sm text-slate-200">{{ deployment.finishedAt ? formatDate(deployment.finishedAt) : 'In progress' }}</p></div>
+                                </div>
+                                @if (deployment.dockerDetails || deployment.workflowUrl) { <footer class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-700 px-4 py-3">@if (deployment.dockerDetails) { <p class="text-sm text-slate-300">{{ deployment.dockerDetails }}</p> } @if (deployment.workflowUrl) { <a [href]="deployment.workflowUrl" target="_blank" rel="noopener" (click)="$event.stopPropagation()" class="text-xs font-semibold text-white hover:underline">Open workflow in Gitea <span aria-hidden="true">↗</span></a> }</footer> }
+                              </section>
+                            </td>
+                          </tr>
+                        }
                       }
                     </tbody>
                   </table>
                 </div>
-                @if (selectedDeployment()) {
-                  <div class="mt-4 rounded-lg border border-slate-700 bg-[#0d1117] p-4 text-sm">
-                    <div class="flex items-start justify-between gap-4"><div><p class="font-semibold text-white">Deployment details</p><p class="mt-1 text-slate-300">{{ selectedDeployment()!.commitMessage || 'No commit message' }}</p></div><button type="button" (click)="selectedDeployment.set(null)" class="text-xs text-slate-400 hover:text-white">Close</button></div>
-                    <dl class="mt-4 grid gap-3 sm:grid-cols-2"><div><dt class="text-xs uppercase tracking-wide text-slate-500">Workflow</dt><dd class="mt-1 text-slate-200">{{ selectedDeployment()!.workflowName || 'Not recorded' }}</dd></div><div><dt class="text-xs uppercase tracking-wide text-slate-500">Run ID</dt><dd class="mt-1 font-mono text-slate-200">{{ selectedDeployment()!.workflowRunId || 'Not recorded' }}</dd></div><div><dt class="text-xs uppercase tracking-wide text-slate-500">Target</dt><dd class="mt-1 text-slate-200">{{ selectedDeployment()!.deploymentTarget || 'Not recorded' }}</dd></div><div><dt class="text-xs uppercase tracking-wide text-slate-500">Docker status</dt><dd class="mt-1 text-slate-200">{{ selectedDeployment()!.dockerStatus || 'Not recorded' }}</dd></div><div><dt class="text-xs uppercase tracking-wide text-slate-500">Started</dt><dd class="mt-1 text-slate-200">{{ formatDate(selectedDeployment()!.startedAt) }}</dd></div><div><dt class="text-xs uppercase tracking-wide text-slate-500">Finished</dt><dd class="mt-1 text-slate-200">{{ selectedDeployment()!.finishedAt ? formatDate(selectedDeployment()!.finishedAt!) : 'In progress' }}</dd></div></dl>
-                    @if (selectedDeployment()!.dockerDetails) { <pre class="mt-4 max-h-56 overflow-auto rounded bg-black p-3 text-xs text-slate-300">{{ selectedDeployment()!.dockerDetails }}</pre> }
-                    @if (selectedDeployment()!.workflowUrl) { <a [href]="selectedDeployment()!.workflowUrl" target="_blank" rel="noopener" class="mt-4 inline-block text-xs text-slate-200 hover:text-white hover:underline">Open workflow in Gitea</a> }
-                  </div>
-                }
               }
 
               @if (false && hasLinkedRepository()) {
@@ -717,6 +730,10 @@ export class ProjectDetailComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    const section = this.route.snapshot.queryParamMap.get('section');
+    if (section && ['board', 'details', 'deployments', 'commits', 'workflows'].includes(section)) {
+      this.activeSection.set(section as 'board' | 'details' | 'deployments' | 'commits' | 'workflows');
+    }
     const rawId = this.route.snapshot.paramMap.get('id');
     const id = rawId ? Number(rawId) : NaN;
     if (!Number.isFinite(id)) {
@@ -1333,6 +1350,15 @@ export class ProjectDetailComponent implements OnInit {
     this.workflowService.runs(id).subscribe({
       next: runs => { this.workflowRuns.set(runs); this.loadingWorkflows.set(false); },
       error: err => { this.setActionError(err.error?.message ?? 'Unable to load workflow runs.'); this.loadingWorkflows.set(false); }
+    });
+  }
+
+  selectSection(section: 'board' | 'details' | 'deployments' | 'commits' | 'workflows'): void {
+    this.activeSection.set(section);
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { section },
+      queryParamsHandling: 'merge'
     });
   }
 

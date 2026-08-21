@@ -20,28 +20,29 @@ import { ProjectMemberResponse } from '../../../core/models/member.model';
   standalone: true,
   imports: [CommonModule, RouterLink, ReactiveFormsModule],
   template: `
-    <div class="p-8 max-w-4xl">
+    <div class="min-h-full bg-[#0d1117] p-8 text-slate-200">
+      <div class="max-w-4xl">
       @if (loading()) {
-        <p class="text-slate-500">Loading task...</p>
+        <p class="text-slate-400">Loading task...</p>
       } @else if (error()) {
         <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">{{ error() }}</div>
       } @else if (task()) {
         <div class="mb-6">
-          <a [routerLink]="['/projects', task()!.projectId]" class="text-sm text-indigo-600 hover:underline">
-            Back to project
+          <a [routerLink]="['/projects', task()!.projectId]" [queryParams]="{ section: 'board' }" class="text-sm font-medium text-slate-300 hover:text-white hover:underline">
+            Back to board
           </a>
-          <h1 class="text-2xl font-bold text-slate-800 mt-2">{{ task()!.title }}</h1>
-          <p class="text-slate-500 text-sm mt-1">{{ task()!.description || 'No description' }}</p>
+          <h1 class="mt-2 text-2xl font-bold text-white">{{ task()!.title }}</h1>
+          <p class="mt-1 text-sm text-slate-400">{{ task()!.description || 'No description' }}</p>
           @if (actionError()) {
             <div class="mt-3 bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">{{ actionError() }}</div>
           }
         </div>
 
         @if (loadingMembers() || canEditTask() || canDeleteTask()) {
-        <div class="bg-white border border-slate-200 rounded-xl p-5 mb-6">
-          <h2 class="font-semibold text-slate-800 mb-4">Edit task</h2>
+        <div class="mb-6 rounded-xl border border-slate-700 bg-[#161b22] p-5 shadow-sm">
+          <h2 class="mb-4 font-semibold text-white">Edit task</h2>
           @if (loadingMembers()) {
-            <p class="text-sm text-slate-500">Loading permissions...</p>
+            <p class="text-sm text-slate-400">Loading permissions...</p>
           } @else if (canEditTask()) {
             <form [formGroup]="editForm" (ngSubmit)="saveTask()" class="grid grid-cols-1 md:grid-cols-2 gap-3">
               <input formControlName="title" type="text" class="gp-input" [class.gp-input-error]="editForm.controls.title.invalid && editForm.controls.title.touched" />
@@ -78,7 +79,7 @@ import { ProjectMemberResponse } from '../../../core/models/member.model';
               type="button"
               (click)="deleteTask()"
               [disabled]="deletingTask()"
-              class="mt-3 w-full border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-60 py-2 rounded-lg text-sm font-medium"
+              class="mt-3 w-full rounded-lg border border-red-800 bg-red-950/40 py-2 text-sm font-medium text-red-200 hover:bg-red-950 disabled:opacity-60"
             >
               Delete task
             </button>
@@ -86,11 +87,11 @@ import { ProjectMemberResponse } from '../../../core/models/member.model';
         </div>
         }
 
-        <div class="bg-white border border-slate-200 rounded-xl p-5">
-          <h2 class="font-semibold text-slate-800 mb-4">Comments</h2>
+        <div class="rounded-xl border border-slate-700 bg-[#161b22] p-5 shadow-sm">
+          <h2 class="mb-4 font-semibold text-white">Comments</h2>
 
           @if (loadingMembers()) {
-            <p class="text-sm text-slate-500 mb-4">Loading permissions...</p>
+            <p class="mb-4 text-sm text-slate-400">Loading permissions...</p>
           } @else if (canComment()) {
             <form [formGroup]="commentForm" (ngSubmit)="createComment()" class="flex gap-2 mb-4">
               <input
@@ -110,22 +111,22 @@ import { ProjectMemberResponse } from '../../../core/models/member.model';
           }
 
           @if (comments().length === 0) {
-            <div class="gp-empty-state min-h-28"><div class="gp-empty-icon" aria-hidden="true">◌</div><p class="text-sm font-medium text-slate-700">No comments yet</p><p class="mt-1 text-xs text-slate-500">Start the conversation about this task.</p></div>
+            <div class="gp-empty-state-dark min-h-28"><div class="gp-empty-icon-dark" aria-hidden="true">◌</div><p class="text-sm font-medium text-slate-200">No comments yet</p><p class="mt-1 text-xs text-slate-400">Start the conversation about this task.</p></div>
           } @else {
             <div class="space-y-2">
               @for (comment of comments(); track comment.id) {
-                <div class="border border-slate-200 rounded-lg p-3">
+                <div class="rounded-lg border border-slate-700 bg-[#0d1117] p-3">
                   <div class="flex items-start justify-between gap-2">
                     <div>
-                      <p class="text-sm text-slate-800">{{ comment.content }}</p>
-                      <p class="text-xs text-slate-500 mt-1">
+                      <p class="text-sm text-slate-200">{{ comment.content }}</p>
+                      <p class="mt-1 text-xs text-slate-400">
                         {{ comment.username }} • {{ formatDate(comment.createdAt) }}
                       </p>
                     </div>
                     @if (canDelete(comment)) {
                       <button
                         (click)="deleteComment(comment.id)"
-                        class="text-xs border border-slate-200 hover:bg-slate-50 px-2 py-1 rounded"
+                        class="rounded border border-slate-600 px-2 py-1 text-xs text-slate-300 hover:bg-slate-800"
                       >
                         Delete
                       </button>
@@ -137,6 +138,7 @@ import { ProjectMemberResponse } from '../../../core/models/member.model';
           }
         </div>
       }
+      </div>
     </div>
   `
 })
