@@ -24,6 +24,11 @@ jobs:
           docker build -t infra-frontend:latest .
           docker rm -f frontend || true
           docker run -d --name frontend --restart unless-stopped --network infra_infra_net -p 4200:80 infra-frontend:latest
+          # Tailscale Funnel serves this second container on localhost:8082.
+          # Keep it on the same image so the public Funnel URL cannot drift
+          # from the directly exposed frontend service.
+          docker rm -f gestproj-funnel-frontend || true
+          docker run -d --name gestproj-funnel-frontend --restart unless-stopped --network infra_infra_net -p 127.0.0.1:8082:80 infra-frontend:latest
 
       - name: Verify frontend service
         run: |
@@ -33,6 +38,10 @@ jobs:
           done
           docker logs frontend
           exit 1
+
+      - name: Verify Funnel frontend service
+        run: |
+          docker exec gestproj-funnel-frontend wget -q -O - http://127.0.0.1/ >/dev/null
 
       - name: Record deployment success
         if: success()
