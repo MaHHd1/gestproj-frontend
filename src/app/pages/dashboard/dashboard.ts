@@ -124,7 +124,7 @@ import { ProjectCreateRequest, ProjectResponse } from '../../core/models/project
               </textarea>
             </div>
 
-            <div class="border border-white/20 bg-black/30 p-4 [&_*]:!text-white">
+            <div class="border border-white/20 bg-black p-4 [&_*]:!text-white">
               <div class="mb-3 flex items-center gap-2"><span class="text-lg text-slate-600" aria-hidden="true">⌘</span><div><p class="text-sm font-semibold text-slate-800">Repository connection <span class="font-normal text-slate-500">(optional)</span></p><p class="text-xs text-slate-500">Link a Gitea repository to see commits and deployments.</p></div></div>
               <div class="grid gap-3 sm:grid-cols-2">
               <div>
