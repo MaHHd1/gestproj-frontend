@@ -9,54 +9,57 @@ import { ProjectInvitationResponse } from '../../../core/models/invitation.model
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-    <div class="min-h-screen bg-slate-100 p-4 flex items-center justify-center">
-      <div class="w-full max-w-lg bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-        <h1 class="text-xl font-bold text-slate-800 mb-1">Project Invitation</h1>
+    <div class="flex min-h-screen items-center justify-center bg-black p-4 text-white sm:p-6">
+      <div class="w-full max-w-lg border border-white/25 bg-[#111111] p-6 shadow-2xl shadow-black sm:p-8">
+        <div class="mb-7 border-b border-white/20 pb-5">
+          <p class="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">GestProj</p>
+          <h1 class="text-2xl font-bold tracking-tight text-white">Project invitation</h1>
+        </div>
 
         @if (loading()) {
-          <p class="text-slate-500 text-sm">Loading invitation...</p>
+          <div class="flex items-center gap-3 text-sm text-slate-300"><span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>Loading invitation...</div>
         } @else if (error()) {
-          <div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">
+          <div class="border border-white/35 bg-white/10 p-4 text-sm text-white">
             {{ error() }}
           </div>
-          <a routerLink="/login" class="inline-block mt-4 text-indigo-600 hover:underline text-sm">
+          <a routerLink="/login" class="mt-5 inline-block border-b border-white text-sm font-medium text-white hover:text-slate-300">
             Go to login
           </a>
         } @else if (invitation()) {
-          <p class="text-slate-600 text-sm mb-4">
+          <p class="mb-5 text-sm leading-6 text-slate-300">
             You were invited to join project #{{ invitation()!.projectId }}.
           </p>
 
-          <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm space-y-1 mb-5">
-            <p><span class="font-medium">Status:</span> {{ invitation()!.status }}</p>
-            <p><span class="font-medium">Role:</span> {{ invitation()!.proposedRole }}</p>
-            <p><span class="font-medium">Expires at:</span> {{ formatDate(invitation()!.expiresAt) }}</p>
+          <div class="mb-6 divide-y divide-white/15 border border-white/20 text-sm">
+            <p class="flex items-center justify-between gap-4 p-4"><span class="text-slate-400">Status</span><span class="font-semibold text-white">{{ invitation()!.status }}</span></p>
+            <p class="flex items-center justify-between gap-4 p-4"><span class="text-slate-400">Role</span><span class="font-semibold text-white">{{ invitation()!.proposedRole }}</span></p>
+            <p class="flex flex-col gap-1 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"><span class="text-slate-400">Expires</span><span class="font-medium text-white">{{ formatDate(invitation()!.expiresAt) }}</span></p>
           </div>
 
           @if (success()) {
-            <div class="bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg p-3 mb-4">
+            <div class="mb-4 border border-white/35 bg-white/10 p-4 text-sm text-white">
               {{ success() }}
             </div>
           }
 
-          <div class="flex gap-3">
+          <div class="flex flex-col gap-3 sm:flex-row">
             <button
               (click)="accept()"
               [disabled]="saving() || invitation()!.status !== 'PENDING'"
-              class="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white py-2 rounded-lg text-sm font-medium"
+              class="flex-1 bg-white px-4 py-3 text-sm font-semibold text-black transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Accept
+              @if (saving()) { Saving... } @else { Accept invitation }
             </button>
             <button
               (click)="reject()"
               [disabled]="saving() || invitation()!.status !== 'PENDING'"
-              class="flex-1 border border-slate-200 hover:bg-slate-50 py-2 rounded-lg text-sm font-medium text-slate-700"
+              class="flex-1 border border-white/50 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Reject
+              Reject invitation
             </button>
           </div>
 
-          <a routerLink="/dashboard" class="inline-block mt-4 text-sm text-indigo-600 hover:underline">
+          <a routerLink="/dashboard" class="mt-6 inline-block border-b border-white/60 pb-0.5 text-sm text-slate-300 hover:border-white hover:text-white">
             Open dashboard
           </a>
         }

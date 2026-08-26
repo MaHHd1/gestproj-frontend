@@ -87,11 +87,15 @@ import { ProjectCreateRequest, ProjectResponse } from '../../core/models/project
 
     <!-- Create project modal -->
     @if (showModal()) {
-      <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-          <div class="flex items-center justify-between mb-5">
-            <h2 class="text-lg font-bold text-slate-800">New Project</h2>
-            <button (click)="closeModal()" class="text-slate-400 hover:text-slate-600">
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4">
+        <div class="w-full max-w-xl border border-white/25 bg-[#111111] p-6 text-white shadow-2xl shadow-black sm:p-8" role="dialog" aria-modal="true" aria-labelledby="new-project-title">
+          <div class="mb-6 flex items-start justify-between border-b border-white/20 pb-5">
+            <div>
+              <p class="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Workspace</p>
+              <h2 id="new-project-title" class="text-2xl font-bold tracking-tight text-white">New project</h2>
+              <p class="mt-1 text-sm text-slate-400">Set up a workspace for your team.</p>
+            </div>
+            <button (click)="closeModal()" aria-label="Close new project dialog" class="-mr-2 -mt-2 p-2 text-slate-400 transition-colors hover:text-white">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
               </svg>
@@ -99,37 +103,37 @@ import { ProjectCreateRequest, ProjectResponse } from '../../core/models/project
           </div>
 
           @if (createError()) {
-            <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{{ createError() }}</div>
+            <div class="mb-4 border border-white/35 bg-white/10 p-4 text-sm text-white">{{ createError() }}</div>
           }
 
           <form [formGroup]="createForm" (ngSubmit)="createProject()" class="space-y-4">
             <div>
-              <label class="gp-label">Project name *</label>
+              <label class="mb-1 block text-sm font-medium text-slate-200">Project name *</label>
               <input formControlName="name" type="text" placeholder="My awesome project"
                 class="gp-input"
                 [class.border-red-400]="createForm.get('name')?.invalid && createForm.get('name')?.touched">
               @if (createForm.get('name')?.invalid && createForm.get('name')?.touched) {
-                <p class="text-red-500 text-xs mt-1">Project name is required</p>
+                <p class="mt-1 text-xs text-slate-300">Project name is required</p>
               }
             </div>
 
             <div>
-              <label class="gp-label">Description</label>
+              <label class="mb-1 block text-sm font-medium text-slate-200">Description</label>
               <textarea formControlName="description" rows="3" placeholder="What is this project about?"
                 class="gp-input resize-none">
               </textarea>
             </div>
 
-            <div class="rounded-lg border border-slate-200 bg-[#f6f8fa] p-4">
+            <div class="border border-white/20 bg-black/30 p-4 [&_*]:!text-white">
               <div class="mb-3 flex items-center gap-2"><span class="text-lg text-slate-600" aria-hidden="true">⌘</span><div><p class="text-sm font-semibold text-slate-800">Repository connection <span class="font-normal text-slate-500">(optional)</span></p><p class="text-xs text-slate-500">Link a Gitea repository to see commits and deployments.</p></div></div>
               <div class="grid gap-3 sm:grid-cols-2">
               <div>
-              <label class="gp-label">Repository owner</label>
+              <label class="mb-1 block text-sm font-medium text-slate-200">Repository owner</label>
               <input formControlName="repoOwner" type="text" placeholder="e.g. my-org"
                 class="gp-input">
               </div>
               <div>
-              <label class="gp-label">Repository name</label>
+              <label class="mb-1 block text-sm font-medium text-slate-200">Repository name</label>
               <input formControlName="repoName" type="text" placeholder="e.g. gestproj-backend"
                 class="gp-input">
               </div>
@@ -138,7 +142,7 @@ import { ProjectCreateRequest, ProjectResponse } from '../../core/models/project
 
             <div class="flex gap-3 pt-2">
               <button type="button" (click)="closeModal()"
-                class="gp-btn-secondary flex-1">
+                class="flex-1 border border-white/50 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white hover:text-black">
                 Cancel
               </button>
               <button type="submit" [disabled]="creating()"
