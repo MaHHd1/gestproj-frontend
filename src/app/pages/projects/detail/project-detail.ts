@@ -252,14 +252,31 @@ type DeploymentProgressState = 'idle' | 'starting' | 'queued' | 'running' | 'suc
             <div class="rounded-xl border border-slate-700 bg-[#161b22] p-5 shadow-sm">
               <div class="mb-5 flex items-start justify-between gap-4"><div><p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Gitea repository</p><h2 class="mt-1 font-semibold text-white">{{ linkedRepository() || 'Repository activity' }}</h2></div><span class="rounded-md border border-slate-600 bg-slate-800 px-2 py-1 text-xs font-medium text-slate-200">Gitea</span></div>
               <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
-                <h3 class="text-sm font-semibold text-slate-200">Deployments</h3>
-                @if (canTriggerDeployment() && hasLinkedRepository()) {
-                  <button type="button" (click)="triggerDeployment()"
-                    [disabled]="deploymentInProgress()"
-                    class="rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-slate-950 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60">
-                    {{ deploymentInProgress() ? 'Deployment in progress...' : 'Deploy main' }}
-                  </button>
-                }
+                <div class="flex flex-wrap items-center gap-3">
+                  <h3 class="text-sm font-semibold text-slate-200">Deployments</h3>
+                  @if (hasLinkedRepository()) {
+                    <span class="text-[11px] text-slate-500">Auto-refreshes every 5 seconds</span>
+                    @if (refreshingDeployments()) {
+                      <span class="text-[11px] text-slate-400" role="status">Updating...</span>
+                    }
+                  }
+                </div>
+                <div class="flex items-center gap-2">
+                  @if (hasLinkedRepository()) {
+                    <button type="button" (click)="refreshDeploymentSection()"
+                      [disabled]="refreshingDeployments()"
+                      class="rounded-md border border-slate-600 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60">
+                      Refresh
+                    </button>
+                  }
+                  @if (canTriggerDeployment() && hasLinkedRepository()) {
+                    <button type="button" (click)="triggerDeployment()"
+                      [disabled]="deploymentInProgress()"
+                      class="rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-slate-950 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60">
+                      {{ deploymentInProgress() ? 'Deployment in progress...' : 'Deploy main' }}
+                    </button>
+                  }
+                </div>
               </div>
               @if (deploymentState() !== 'idle') {
                 <div [class]="'mb-4 rounded-lg border p-4 ' + deploymentPanelClass()">
@@ -717,6 +734,7 @@ export class ProjectDetailComponent implements OnDestroy, OnInit {
   inviteCandidates = signal<UserResponse[]>([]);
   searchingInviteCandidates = signal(false);
   loadingDeployments = signal(false);
+  refreshingDeployments = signal(false);
   deploymentState = signal<DeploymentProgressState>('idle');
   deploymentProgress = signal(0);
   deploymentStatusMessage = signal('');
@@ -744,7 +762,9 @@ export class ProjectDetailComponent implements OnDestroy, OnInit {
 
   private readonly deploymentPollIntervalMs = 3000;
   private readonly deploymentPollLimit = 100;
+  private readonly deploymentSectionRefreshIntervalMs = 5000;
   private deploymentPollTimer: ReturnType<typeof setTimeout> | null = null;
+  private deploymentSectionRefreshTimer: ReturnType<typeof setTimeout> | null = null;
   private deploymentPollAttempts = 0;
   private deploymentTriggeredAt = 0;
 
@@ -802,6 +822,7 @@ export class ProjectDetailComponent implements OnDestroy, OnInit {
 
   ngOnDestroy(): void {
     this.clearDeploymentPoll();
+    this.clearDeploymentSectionRefresh();
   }
 
   createTask(): void {
@@ -1041,7 +1062,9 @@ export class ProjectDetailComponent implements OnDestroy, OnInit {
             this.loadDeployments();
             this.loadCommits();
             this.loadWorkflows();
+            this.startDeploymentSectionRefresh();
           } else {
+            this.clearDeploymentSectionRefresh();
             this.deployments.set([]);
             this.commits.set([]);
             this.workflowRuns.set([]);
@@ -1542,7 +1565,9 @@ export class ProjectDetailComponent implements OnDestroy, OnInit {
           this.loadDeployments();
           this.loadCommits();
           this.loadWorkflows();
+          this.startDeploymentSectionRefresh();
         } else {
+          this.clearDeploymentSectionRefresh();
           this.deployments.set([]);
           this.commits.set([]);
           this.workflowRuns.set([]);
@@ -1616,7 +1641,7 @@ export class ProjectDetailComponent implements OnDestroy, OnInit {
     this.loadingDeployments.set(true);
     this.deploymentService.list(id).subscribe({
       next: deployments => {
-        this.deployments.set(deployments);
+        this.updateDeploymentList(deployments);
         this.loadingDeployments.set(false);
       },
       error: err => {
@@ -1624,6 +1649,58 @@ export class ProjectDetailComponent implements OnDestroy, OnInit {
         this.loadingDeployments.set(false);
       }
     });
+  }
+
+  refreshDeploymentSection(): void {
+    const id = this.projectId();
+    if (!id || !this.hasLinkedRepository() || this.refreshingDeployments()) {
+      return;
+    }
+
+    this.refreshingDeployments.set(true);
+    this.deploymentService.list(id).subscribe({
+      next: deployments => {
+        this.updateDeploymentList(deployments);
+        this.refreshingDeployments.set(false);
+      },
+      error: () => {
+        // Keep the last known deployment list visible if a background refresh fails.
+        this.refreshingDeployments.set(false);
+      }
+    });
+  }
+
+  private updateDeploymentList(deployments: DeploymentResponse[]): void {
+    this.deployments.set(deployments);
+    const selected = this.selectedDeployment();
+    if (selected) {
+      this.selectedDeployment.set(deployments.find(deployment => deployment.id === selected.id) ?? null);
+    }
+  }
+
+  private startDeploymentSectionRefresh(): void {
+    this.clearDeploymentSectionRefresh();
+    this.scheduleDeploymentSectionRefresh();
+  }
+
+  private scheduleDeploymentSectionRefresh(): void {
+    this.deploymentSectionRefreshTimer = setTimeout(() => {
+      this.deploymentSectionRefreshTimer = null;
+      if (!this.projectId() || !this.hasLinkedRepository()) {
+        return;
+      }
+      if (this.activeSection() === 'deployments') {
+        this.refreshDeploymentSection();
+      }
+      this.scheduleDeploymentSectionRefresh();
+    }, this.deploymentSectionRefreshIntervalMs);
+  }
+
+  private clearDeploymentSectionRefresh(): void {
+    if (this.deploymentSectionRefreshTimer !== null) {
+      clearTimeout(this.deploymentSectionRefreshTimer);
+      this.deploymentSectionRefreshTimer = null;
+    }
   }
 
   private loadCommits(): void {
@@ -1656,6 +1733,9 @@ export class ProjectDetailComponent implements OnDestroy, OnInit {
 
   selectSection(section: 'board' | 'details' | 'deployments' | 'commits' | 'workflows'): void {
     this.activeSection.set(section);
+    if (section === 'deployments') {
+      this.refreshDeploymentSection();
+    }
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { section },
