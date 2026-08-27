@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -26,6 +26,8 @@ import { DeploymentResponse } from '../../../core/models/deployment.model';
 import { CommitResponse } from '../../../core/models/commit.model';
 import { WorkflowJobResponse, WorkflowRunResponse, WorkflowStepResponse } from '../../../core/models/workflow.model';
 import { UserResponse } from '../../../core/models/user.model';
+
+type DeploymentProgressState = 'idle' | 'starting' | 'queued' | 'running' | 'success' | 'failure' | 'timeout';
 
 @Component({
   selector: 'app-project-detail',
@@ -253,16 +255,44 @@ import { UserResponse } from '../../../core/models/user.model';
                 <h3 class="text-sm font-semibold text-slate-200">Deployments</h3>
                 @if (canTriggerDeployment() && hasLinkedRepository()) {
                   <button type="button" (click)="triggerDeployment()"
-                    [disabled]="triggeringDeployment()"
+                    [disabled]="deploymentInProgress()"
                     class="rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-slate-950 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60">
-                    {{ triggeringDeployment() ? 'Starting deployment...' : 'Deploy main' }}
+                    {{ deploymentInProgress() ? 'Deployment in progress...' : 'Deploy main' }}
                   </button>
                 }
               </div>
-              @if (deploymentNotice()) {
-                <p class="mb-4 rounded-md border border-emerald-800 bg-emerald-950/40 px-3 py-2 text-sm text-emerald-300">
-                  {{ deploymentNotice() }}
-                </p>
+              @if (deploymentState() !== 'idle') {
+                <div [class]="'mb-4 rounded-lg border p-4 ' + deploymentPanelClass()">
+                  <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p [class]="'text-sm font-semibold ' + deploymentStateTextClass()">
+                        Deployment {{ deploymentStateLabel() }}
+                      </p>
+                      <p class="mt-1 text-sm text-slate-300">{{ deploymentStatusMessage() }}</p>
+                    </div>
+                    <span [class]="'text-sm font-semibold ' + deploymentStateTextClass()">
+                      {{ deploymentProgress() }}%
+                    </span>
+                  </div>
+                  <div class="mt-3 h-2 overflow-hidden rounded-full bg-slate-700" role="progressbar"
+                    [attr.aria-valuenow]="deploymentProgress()" aria-valuemin="0" aria-valuemax="100"
+                    [attr.aria-label]="'Deployment progress: ' + deploymentStateLabel()">
+                    <div [class]="'h-full rounded-full transition-all duration-500 ' + deploymentProgressClass()"
+                      [style.width.%]="deploymentProgress()"></div>
+                  </div>
+                  @if (deploymentRunId()) {
+                    <p class="mt-2 text-xs text-slate-400">Gitea Actions run #{{ deploymentRunId() }} is being monitored.</p>
+                  } @else if (deploymentInProgress()) {
+                    <p class="mt-2 text-xs text-slate-400">Waiting for Gitea Actions to create the workflow run...</p>
+                  }
+                  @if (deploymentWorkflowUrl()) {
+                    <a [href]="deploymentWorkflowUrl()" target="_blank" rel="noopener"
+                      class="mt-2 inline-block text-xs font-semibold text-white hover:underline">
+                      Open workflow in Gitea
+                    </a>
+                  }
+                  <p class="mt-2 text-[11px] text-slate-500">Progress is calculated from completed Gitea Actions jobs and steps.</p>
+                </div>
               }
               @if (!hasLinkedRepository()) {
                 <div class="gp-empty-state min-h-32"><div class="gp-empty-icon" aria-hidden="true">⌘</div><p class="font-medium text-slate-700">No repository linked</p><p class="mt-1 text-sm text-slate-500">Link a Gitea repository to view its commits and deployments.</p>@if (canEditProject()) { <button type="button" (click)="activeSection.set('details')" class="mt-4 text-sm font-medium text-slate-950 hover:underline">Add repository</button> }</div>
@@ -655,7 +685,7 @@ import { UserResponse } from '../../../core/models/user.model';
     </div>
   `
 })
-export class ProjectDetailComponent implements OnInit {
+export class ProjectDetailComponent implements OnDestroy, OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private auth = inject(AuthService);
@@ -687,8 +717,11 @@ export class ProjectDetailComponent implements OnInit {
   inviteCandidates = signal<UserResponse[]>([]);
   searchingInviteCandidates = signal(false);
   loadingDeployments = signal(false);
-  triggeringDeployment = signal(false);
-  deploymentNotice = signal('');
+  deploymentState = signal<DeploymentProgressState>('idle');
+  deploymentProgress = signal(0);
+  deploymentStatusMessage = signal('');
+  deploymentRunId = signal<number | null>(null);
+  deploymentWorkflowUrl = signal<string | null>(null);
   loadingCommits = signal(false);
   loadingWorkflows = signal(false);
   loadingJobs = signal(false);
@@ -708,6 +741,12 @@ export class ProjectDetailComponent implements OnInit {
   taskTotalElements = signal(0);
   activeSection = signal<'board' | 'details' | 'deployments' | 'commits' | 'workflows'>('deployments');
   managingMembers = signal(false);
+
+  private readonly deploymentPollIntervalMs = 3000;
+  private readonly deploymentPollLimit = 100;
+  private deploymentPollTimer: ReturnType<typeof setTimeout> | null = null;
+  private deploymentPollAttempts = 0;
+  private deploymentTriggeredAt = 0;
 
   memberDrafts: Record<number, ProjectMemberUpdateRequest> = {};
   readonly boardColumns: { status: TaskStatus; label: string; columnClass: string; dotClass: string }[] = [
@@ -759,6 +798,10 @@ export class ProjectDetailComponent implements OnInit {
     }
     this.projectId.set(id);
     this.loadAll(id);
+  }
+
+  ngOnDestroy(): void {
+    this.clearDeploymentPoll();
   }
 
   createTask(): void {
@@ -1218,6 +1261,47 @@ export class ProjectDetailComponent implements OnInit {
     return this.linkedRepository().length > 0;
   }
 
+  deploymentInProgress(): boolean {
+    const state = this.deploymentState();
+    return state === 'starting' || state === 'queued' || state === 'running';
+  }
+
+  deploymentStateLabel(): string {
+    return {
+      idle: 'not started',
+      starting: 'starting',
+      queued: 'queued',
+      running: 'in progress',
+      success: 'succeeded',
+      failure: 'failed',
+      timeout: 'still running'
+    }[this.deploymentState()];
+  }
+
+  deploymentPanelClass(): string {
+    const state = this.deploymentState();
+    if (state === 'success') return 'border-emerald-800 bg-emerald-950/40';
+    if (state === 'failure') return 'border-red-800 bg-red-950/40';
+    if (state === 'timeout') return 'border-amber-800 bg-amber-950/40';
+    return 'border-slate-700 bg-slate-900/60';
+  }
+
+  deploymentStateTextClass(): string {
+    const state = this.deploymentState();
+    if (state === 'success') return 'text-emerald-300';
+    if (state === 'failure') return 'text-red-300';
+    if (state === 'timeout') return 'text-amber-300';
+    return 'text-slate-200';
+  }
+
+  deploymentProgressClass(): string {
+    const state = this.deploymentState();
+    if (state === 'success') return 'bg-emerald-400';
+    if (state === 'failure') return 'bg-red-400';
+    if (state === 'timeout') return 'bg-amber-400';
+    return 'bg-slate-300';
+  }
+
   triggerDeployment(): void {
     const id = this.projectId();
     if (!id || !this.hasLinkedRepository()) {
@@ -1229,27 +1313,189 @@ export class ProjectDetailComponent implements OnInit {
       return;
     }
 
-    this.triggeringDeployment.set(true);
-    this.deploymentNotice.set('');
+    this.clearDeploymentPoll();
+    this.deploymentPollAttempts = 0;
+    this.deploymentTriggeredAt = Date.now();
+    this.deploymentState.set('starting');
+    this.deploymentProgress.set(5);
+    this.deploymentStatusMessage.set('Submitting the deployment request to Gitea Actions...');
+    this.deploymentRunId.set(null);
+    this.deploymentWorkflowUrl.set(null);
     this.setActionError('');
     this.deploymentService.trigger(id).subscribe({
       next: response => {
-        this.deploymentNotice.set(`${response.message}. The deployment will appear after the workflow health check completes.`);
-        this.triggeringDeployment.set(false);
-        this.loadDeployments();
-        this.loadWorkflows();
-        setTimeout(() => {
-          if (this.projectId() === id) {
-            this.loadDeployments();
-            this.loadWorkflows();
-          }
-        }, 3000);
+        if (this.projectId() !== id) return;
+        this.deploymentState.set('queued');
+        this.deploymentProgress.set(10);
+        this.deploymentStatusMessage.set(`${response.message}. Waiting for Gitea Actions to create a run...`);
+        this.pollDeployment(id);
       },
       error: err => {
-        this.setActionError(err.error?.message ?? 'Unable to start the deployment workflow.');
-        this.triggeringDeployment.set(false);
+        if (this.projectId() !== id) return;
+        this.deploymentState.set('failure');
+        this.deploymentProgress.set(0);
+        this.deploymentStatusMessage.set(this.deploymentErrorMessage(err));
       }
     });
+  }
+
+  private pollDeployment(projectId: number): void {
+    if (this.projectId() !== projectId || !this.deploymentInProgress()) return;
+
+    this.deploymentPollAttempts += 1;
+    if (this.deploymentPollAttempts > this.deploymentPollLimit) {
+      this.clearDeploymentPoll();
+      this.deploymentState.set('timeout');
+      this.deploymentProgress.set(95);
+      this.deploymentStatusMessage.set(
+        'The workflow is taking longer than expected. Open the Workflows section to continue monitoring it.'
+      );
+      return;
+    }
+
+    this.workflowService.runs(projectId).subscribe({
+      next: runs => {
+        if (this.projectId() !== projectId || !this.deploymentInProgress()) return;
+        this.workflowRuns.set(runs);
+        const run = this.findDeploymentRun(runs);
+        if (!run) {
+          this.deploymentState.set('queued');
+          this.deploymentProgress.set(Math.min(25, 10 + this.deploymentPollAttempts));
+          this.deploymentStatusMessage.set('Request accepted. Waiting for Gitea Actions to create the deployment run...');
+          this.scheduleDeploymentPoll(projectId);
+          return;
+        }
+
+        this.deploymentRunId.set(run.id);
+        this.deploymentWorkflowUrl.set(run.htmlUrl);
+        const runState = (run.conclusion || run.status || '').toUpperCase();
+        if (runState === 'SUCCESS' || runState === 'COMPLETED') {
+          this.finishDeployment(
+            projectId,
+            'success',
+            'Deployment completed successfully. The backend health check passed.',
+            run
+          );
+          return;
+        }
+        if (runState === 'FAILURE' || runState === 'FAILED' || runState === 'CANCELLED' || runState === 'SKIPPED') {
+          this.finishDeployment(
+            projectId,
+            'failure',
+            `Deployment failed in Gitea Actions (${run.conclusion || run.status || 'unknown status'}).`,
+            run
+          );
+          return;
+        }
+
+        this.deploymentState.set('running');
+        this.deploymentProgress.set(30);
+        this.deploymentStatusMessage.set(`Gitea Actions is running ${this.workflowLabel(run)}...`);
+        this.workflowService.jobs(projectId, run.id).subscribe({
+          next: jobs => {
+            if (this.projectId() !== projectId || !this.deploymentInProgress()) return;
+            this.workflowJobs.set(jobs);
+            this.deploymentProgress.set(this.workflowProgress(jobs));
+            this.scheduleDeploymentPoll(projectId);
+          },
+          error: () => {
+            if (this.projectId() === projectId && this.deploymentInProgress()) {
+              this.deploymentStatusMessage.set('Deployment is running. Waiting for job progress from Gitea Actions...');
+              this.scheduleDeploymentPoll(projectId);
+            }
+          }
+        });
+      },
+      error: () => {
+        if (this.projectId() !== projectId || !this.deploymentInProgress()) return;
+        this.deploymentStatusMessage.set('Deployment started. Waiting for workflow status from Gitea Actions...');
+        this.scheduleDeploymentPoll(projectId);
+      }
+    });
+  }
+
+  private findDeploymentRun(runs: WorkflowRunResponse[]): WorkflowRunResponse | null {
+    const candidates = runs.filter(run => {
+      const path = (run.workflowPath || '').toLowerCase();
+      const name = (run.name || '').toLowerCase();
+      return path === 'cd.yml'
+        || path.startsWith('cd.yml@')
+        || path.endsWith('/cd.yml')
+        || path.includes('/cd.yml@')
+        || name.includes('deploy backend');
+    });
+    const freshRuns = candidates.filter(run => {
+      if (!run.createdAt) return false;
+      const createdAt = Date.parse(run.createdAt);
+      return Number.isFinite(createdAt) && createdAt >= this.deploymentTriggeredAt - 30_000;
+    });
+    return [...freshRuns].sort((left, right) => {
+      const leftTime = left.createdAt ? Date.parse(left.createdAt) : 0;
+      const rightTime = right.createdAt ? Date.parse(right.createdAt) : 0;
+      return rightTime - leftTime || right.id - left.id;
+    })[0] || null;
+  }
+
+  private workflowProgress(jobs: WorkflowJobResponse[]): number {
+    const terminalStates = new Set(['SUCCESS', 'COMPLETED', 'FAILURE', 'FAILED', 'CANCELLED', 'SKIPPED']);
+    const steps = jobs.flatMap(job => job.steps || []);
+    if (steps.length > 0) {
+      const completedSteps = steps.filter(step => terminalStates.has(this.workflowState(step).toUpperCase())).length;
+      return Math.min(95, 20 + Math.round((completedSteps / steps.length) * 70));
+    }
+    if (jobs.length > 0) {
+      const completedJobs = jobs.filter(job => terminalStates.has(this.workflowState(job).toUpperCase())).length;
+      return Math.min(95, 20 + Math.round((completedJobs / jobs.length) * 70));
+    }
+    return 30;
+  }
+
+  private finishDeployment(
+    projectId: number,
+    state: 'success' | 'failure',
+    message: string,
+    run: WorkflowRunResponse
+  ): void {
+    if (this.projectId() !== projectId) return;
+    this.clearDeploymentPoll();
+    this.deploymentState.set(state);
+    this.deploymentProgress.set(100);
+    this.deploymentStatusMessage.set(message);
+    this.deploymentWorkflowUrl.set(run.htmlUrl);
+    this.loadDeployments();
+    this.loadWorkflows();
+    this.deploymentPollTimer = setTimeout(() => {
+      this.deploymentPollTimer = null;
+      if (this.projectId() === projectId) {
+        this.loadDeployments();
+        this.loadWorkflows();
+      }
+    }, 2000);
+  }
+
+  private scheduleDeploymentPoll(projectId: number): void {
+    this.clearDeploymentPoll();
+    this.deploymentPollTimer = setTimeout(() => {
+      this.deploymentPollTimer = null;
+      this.pollDeployment(projectId);
+    }, this.deploymentPollIntervalMs);
+  }
+
+  private clearDeploymentPoll(): void {
+    if (this.deploymentPollTimer !== null) {
+      clearTimeout(this.deploymentPollTimer);
+      this.deploymentPollTimer = null;
+    }
+  }
+
+  private deploymentErrorMessage(error: { status?: number; error?: { message?: string } | string }): string {
+    if (typeof error?.error === 'object' && error.error?.message) return error.error.message;
+    if (typeof error?.error === 'string' && error.error.trim()) return error.error;
+    if (error?.status === 401) return 'Your session has expired. Please sign in again.';
+    if (error?.status === 403) return 'You do not have permission to deploy this project.';
+    if (error?.status === 502) return 'Gitea could not start the deployment workflow. Check that cd.yml exists on the main branch.';
+    if (error?.status === 0) return 'Unable to reach the server. Check your connection and try again.';
+    return 'Unable to start the deployment workflow.';
   }
 
   shortCommitHash(hash: string): string {
