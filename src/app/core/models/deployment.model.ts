@@ -16,3 +16,11 @@ export interface DeploymentResponse {
   dockerStatus: string | null;
   dockerDetails: string | null;
 }
+
+export interface DeploymentTriggerResponse {
+  projectId: number;
+  repository: string;
+  workflowName: string;
+  ref: string;
+  message: string;
+}

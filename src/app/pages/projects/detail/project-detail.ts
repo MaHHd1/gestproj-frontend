@@ -249,7 +249,21 @@ import { UserResponse } from '../../../core/models/user.model';
           <section class="xl:col-span-3">
             <div class="rounded-xl border border-slate-700 bg-[#161b22] p-5 shadow-sm">
               <div class="mb-5 flex items-start justify-between gap-4"><div><p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Gitea repository</p><h2 class="mt-1 font-semibold text-white">{{ linkedRepository() || 'Repository activity' }}</h2></div><span class="rounded-md border border-slate-600 bg-slate-800 px-2 py-1 text-xs font-medium text-slate-200">Gitea</span></div>
-              <h3 class="mb-3 text-sm font-semibold text-slate-200">Deployments</h3>
+              <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <h3 class="text-sm font-semibold text-slate-200">Deployments</h3>
+                @if (canTriggerDeployment() && hasLinkedRepository()) {
+                  <button type="button" (click)="triggerDeployment()"
+                    [disabled]="triggeringDeployment()"
+                    class="rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-slate-950 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60">
+                    {{ triggeringDeployment() ? 'Starting deployment...' : 'Deploy main' }}
+                  </button>
+                }
+              </div>
+              @if (deploymentNotice()) {
+                <p class="mb-4 rounded-md border border-emerald-800 bg-emerald-950/40 px-3 py-2 text-sm text-emerald-300">
+                  {{ deploymentNotice() }}
+                </p>
+              }
               @if (!hasLinkedRepository()) {
                 <div class="gp-empty-state min-h-32"><div class="gp-empty-icon" aria-hidden="true">⌘</div><p class="font-medium text-slate-700">No repository linked</p><p class="mt-1 text-sm text-slate-500">Link a Gitea repository to view its commits and deployments.</p>@if (canEditProject()) { <button type="button" (click)="activeSection.set('details')" class="mt-4 text-sm font-medium text-slate-950 hover:underline">Add repository</button> }</div>
               } @else if (loadingDeployments()) {
@@ -673,6 +687,8 @@ export class ProjectDetailComponent implements OnInit {
   inviteCandidates = signal<UserResponse[]>([]);
   searchingInviteCandidates = signal(false);
   loadingDeployments = signal(false);
+  triggeringDeployment = signal(false);
+  deploymentNotice = signal('');
   loadingCommits = signal(false);
   loadingWorkflows = signal(false);
   loadingJobs = signal(false);
@@ -1035,6 +1051,11 @@ export class ProjectDetailComponent implements OnInit {
     return !!member && (member.role === 'OWNER' || member.canCreateTask);
   }
 
+  canTriggerDeployment(): boolean {
+    const member = this.currentMember();
+    return !!member && member.status === 'ACTIVE' && (member.role === 'OWNER' || member.canCreateTask);
+  }
+
   canMoveTasks(): boolean {
     const member = this.currentMember();
     return !!member && member.status === 'ACTIVE' && (member.role === 'OWNER' || member.canEditTask);
@@ -1195,6 +1216,40 @@ export class ProjectDetailComponent implements OnInit {
 
   hasLinkedRepository(): boolean {
     return this.linkedRepository().length > 0;
+  }
+
+  triggerDeployment(): void {
+    const id = this.projectId();
+    if (!id || !this.hasLinkedRepository()) {
+      this.setActionError('Link a Gitea repository before deploying.');
+      return;
+    }
+    if (!this.canTriggerDeployment()) {
+      this.setActionError('You do not have permission to deploy this project.');
+      return;
+    }
+
+    this.triggeringDeployment.set(true);
+    this.deploymentNotice.set('');
+    this.setActionError('');
+    this.deploymentService.trigger(id).subscribe({
+      next: response => {
+        this.deploymentNotice.set(`${response.message}. The deployment will appear after the workflow health check completes.`);
+        this.triggeringDeployment.set(false);
+        this.loadDeployments();
+        this.loadWorkflows();
+        setTimeout(() => {
+          if (this.projectId() === id) {
+            this.loadDeployments();
+            this.loadWorkflows();
+          }
+        }, 3000);
+      },
+      error: err => {
+        this.setActionError(err.error?.message ?? 'Unable to start the deployment workflow.');
+        this.triggeringDeployment.set(false);
+      }
+    });
   }
 
   shortCommitHash(hash: string): string {
