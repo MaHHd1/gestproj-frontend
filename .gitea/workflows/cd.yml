@@ -57,8 +57,11 @@ jobs:
             echo "Invalid project_id input" >&2
             exit 1
           fi
+          COMMIT_MESSAGE="$(git log -1 --pretty=format:%s 2>/dev/null || true)"
+          if [ -z "$COMMIT_MESSAGE" ]; then COMMIT_MESSAGE="Frontend deployment triggered by Gitea Actions"; fi
+          COMMIT_MESSAGE_SQL="$(printf '%s' "$COMMIT_MESSAGE" | sed "s/'/''/g")"
           docker exec postgres psql -U admin -d gestproj \
-            -c "INSERT INTO deployments (project_id, status, commit_hash, commit_message, triggered_by, started_at, finished_at, workflow_name, workflow_run_id, deployment_target, docker_status, docker_details) VALUES ($PROJECT_ID, 'SUCCESS', '${{ github.sha }}', 'Frontend deployed by Gitea Actions', '${{ github.actor }}', NOW(), NOW(), 'CD - Deploy frontend', '${{ github.run_id }}', '100.83.8.6 / frontend', 'HEALTHY', 'Frontend container responded successfully');"
+            -c "INSERT INTO deployments (project_id, status, commit_hash, commit_message, triggered_by, started_at, finished_at, workflow_name, workflow_run_id, deployment_target, docker_status, docker_details) VALUES ($PROJECT_ID, 'SUCCESS', '${{ github.sha }}', '$COMMIT_MESSAGE_SQL', '${{ github.actor }}', NOW(), NOW(), 'CD - Deploy frontend', '${{ github.run_id }}', '100.83.8.6 / frontend', 'HEALTHY', 'Frontend container responded successfully');"
 
       - name: Record deployment failure
         if: failure()
@@ -69,5 +72,8 @@ jobs:
             echo "Invalid project_id input" >&2
             exit 1
           fi
+          COMMIT_MESSAGE="$(git log -1 --pretty=format:%s 2>/dev/null || true)"
+          if [ -z "$COMMIT_MESSAGE" ]; then COMMIT_MESSAGE="Frontend deployment failed in Gitea Actions"; fi
+          COMMIT_MESSAGE_SQL="$(printf '%s' "$COMMIT_MESSAGE" | sed "s/'/''/g")"
           docker exec postgres psql -U admin -d gestproj \
-            -c "INSERT INTO deployments (project_id, status, commit_hash, commit_message, triggered_by, started_at, finished_at, workflow_name, workflow_run_id, deployment_target, docker_status, docker_details) VALUES ($PROJECT_ID, 'FAILURE', '${{ github.sha }}', 'Frontend deployment failed in Gitea Actions', '${{ github.actor }}', NOW(), NOW(), 'CD - Deploy frontend', '${{ github.run_id }}', '100.83.8.6 / frontend', 'UNHEALTHY', 'Workflow failed before the frontend health check completed');"
+            -c "INSERT INTO deployments (project_id, status, commit_hash, commit_message, triggered_by, started_at, finished_at, workflow_name, workflow_run_id, deployment_target, docker_status, docker_details) VALUES ($PROJECT_ID, 'FAILURE', '${{ github.sha }}', '$COMMIT_MESSAGE_SQL', '${{ github.actor }}', NOW(), NOW(), 'CD - Deploy frontend', '${{ github.run_id }}', '100.83.8.6 / frontend', 'UNHEALTHY', 'Workflow failed before the frontend health check completed');"

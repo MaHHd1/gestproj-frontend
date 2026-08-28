@@ -337,7 +337,7 @@ type DeploymentProgressState = 'idle' | 'starting' | 'queued' | 'running' | 'suc
                             </span>
                           </td>
                           <td class="py-3 pr-4">
-                            <p class="font-medium text-slate-100">{{ deployment.commitMessage || 'No commit message' }}</p>
+                            <p class="font-medium text-slate-100">{{ deploymentCommitMessage(deployment) }}</p>
                             <p class="text-xs text-slate-400 font-mono">{{ shortCommitHash(deployment.commitHash) }}</p>
                           </td>
                           <td class="py-3 pr-4 text-slate-300">{{ deployment.triggeredBy }}</td>
@@ -348,7 +348,7 @@ type DeploymentProgressState = 'idle' | 'starting' | 'queued' | 'running' | 'suc
                             <td colspan="4" class="p-3 sm:p-4">
                               <section class="overflow-hidden rounded-lg border border-slate-700 bg-[#161b22] shadow-inner">
                                 <header class="flex flex-wrap items-start justify-between gap-3 border-b border-slate-700 bg-slate-800/60 px-4 py-3">
-                                  <div class="min-w-0"><p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Deployment details</p><p class="mt-1 truncate font-medium text-white">{{ deployment.commitMessage || 'No commit message' }}</p></div>
+                                  <div class="min-w-0"><p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Deployment details</p><p class="mt-1 truncate font-medium text-white">{{ deploymentCommitMessage(deployment) }}</p></div>
                                   <div class="flex items-center gap-3"><span [class]="deployment.status === 'SUCCESS' ? 'rounded-full bg-emerald-950 px-2.5 py-1 text-xs font-semibold text-emerald-300' : 'rounded-full bg-red-950 px-2.5 py-1 text-xs font-semibold text-red-300'">{{ deployment.status }}</span><button type="button" (click)="toggleDeploymentDetails(deployment); $event.stopPropagation()" class="text-xs font-medium text-slate-400 hover:text-white">Close</button></div>
                                 </header>
                                 <div class="grid gap-px bg-slate-700 sm:grid-cols-2 lg:grid-cols-3">
@@ -1527,6 +1527,22 @@ export class ProjectDetailComponent implements OnDestroy, OnInit {
       return '-';
     }
     return normalized.slice(0, 7);
+  }
+
+  deploymentCommitMessage(deployment: DeploymentResponse): string {
+    const message = deployment.commitMessage?.trim();
+    if (message && !this.isGeneratedDeploymentMessage(message)) {
+      return message;
+    }
+
+    const commit = this.shortCommitHash(deployment.commitHash);
+    const outcome = deployment.status === 'SUCCESS' ? 'completed' : deployment.status === 'FAILURE' ? 'failed' : 'recorded';
+    return commit === '-' ? `Deployment ${outcome}` : `Deployment ${outcome} · ${commit}`;
+  }
+
+  private isGeneratedDeploymentMessage(message: string): boolean {
+    return /^(?:Backend|Frontend) deployment(?: failed)?(?: in| by) Gitea Actions$/i.test(message)
+      || /^(?:Backend|Frontend) deployed by Gitea Actions$/i.test(message);
   }
 
   relativeTimeFromNow(value: string): string {
