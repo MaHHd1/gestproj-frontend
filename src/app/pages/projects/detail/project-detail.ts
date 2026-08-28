@@ -1513,10 +1513,15 @@ export class ProjectDetailComponent implements OnDestroy, OnInit {
 
   private deploymentErrorMessage(error: { status?: number; error?: { message?: string } | string }): string {
     if (typeof error?.error === 'object' && error.error?.message) return error.error.message;
-    if (typeof error?.error === 'string' && error.error.trim()) return error.error;
+    if (typeof error?.error === 'string' && error.error.trim()
+      && !/<(?:!doctype\s+html|html|head|body|title)\b/i.test(error.error)) {
+      return error.error.trim();
+    }
     if (error?.status === 401) return 'Your session has expired. Please sign in again.';
     if (error?.status === 403) return 'You do not have permission to deploy this project.';
-    if (error?.status === 502) return 'Gitea could not start the deployment workflow. Check that cd.yml exists on the main branch.';
+    if (error?.status === 502) {
+      return 'The server is restarting for deployment. Please wait a few seconds and try again.';
+    }
     if (error?.status === 0) return 'Unable to reach the server. Check your connection and try again.';
     return 'Unable to start the deployment workflow.';
   }
