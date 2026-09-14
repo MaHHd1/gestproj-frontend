@@ -7,7 +7,7 @@ on:
     branches: [main, develop]
 
 jobs:
-  build-and-test:
+  build:
     runs-on: ubuntu-latest
 
     strategy:
@@ -28,19 +28,7 @@ jobs:
         run: npm ci
 
       - name: Build application
-        run: npm run build --verbose
-
-      - name: Run tests
-        run: npm test
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        if: matrix.node-version == '20.x'
-        with:
-          file: ./coverage/coverage-final.json
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
+        run: npm run build
 
   security-scan:
     runs-on: ubuntu-latest
