@@ -8,6 +8,8 @@ on:
 jobs:
   build-docker:
     runs-on: ubuntu-latest
+    env:
+      NPM_CONFIG_UPDATE_NOTIFIER: false
 
     steps:
       - name: Checkout code
@@ -20,10 +22,10 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit
 
       - name: Build application
-        run: npm run build
+        run: npm run build --loglevel=error
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
