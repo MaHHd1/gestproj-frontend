@@ -1,59 +1,160 @@
 # GestProj Frontend
 
-GestProj is a collaborative project-management application. This repository is its Angular 21 client; the Spring Boot API lives in the sibling [`../gestproj-backend`](../gestproj-backend) repository.
+<div align="center">
 
-## Features
+[![GitHub Actions Build](https://github.com/your-username/gestproj-frontend/actions/workflows/build.yml/badge.svg)](https://github.com/your-username/gestproj-frontend/actions/workflows/build.yml)
+[![GitHub Actions Test](https://github.com/your-username/gestproj-frontend/actions/workflows/test.yml/badge.svg)](https://github.com/your-username/gestproj-frontend/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/badge/Node.js-18%2B-brightgreen)](https://nodejs.org/)
+[![Angular Version](https://img.shields.io/badge/Angular-21-red?logo=angular)](https://angular.io/)
 
-- Account registration, login, protected routes, and persisted JWT sessions.
-- Project dashboard, project creation and settings, and progress statistics.
-- Task board and task details with assignment, filters, priorities, due dates, and comments.
-- Project membership and permissions, invitations, notifications, and activity logs.
-- Optional Gitea repository views for commits and workflow runs, jobs, and logs.
-- Deployment history with workflow and Docker-health metadata when supplied by the API.
+</div>
 
-## Run locally
+---
 
-Prerequisites: Node.js compatible with Angular 21 and the backend running on port `8080`.
+**GestProj** is a collaborative project-management application designed for teams to streamline task management, project tracking, and team collaboration. This repository contains the **Angular 21 frontend client**; the Spring Boot API lives in the sibling [`gestproj-backend`](../gestproj-backend) repository.
+
+### 🚀 Quick Links
+
+- **[Frontend](https://github.com/your-username/gestproj-frontend)** | **[Backend](https://github.com/your-username/gestproj-backend)** | **[Full Stack Setup](#docker-deployment)**
+
+---
+
+## ✨ Features
+
+✅ **Authentication** - Account registration, login, protected routes, and persisted JWT sessions  
+✅ **Project Management** - Dashboard, project creation, settings, and progress statistics  
+✅ **Task Management** - Board view with assignment, filters, priorities, due dates, and inline comments  
+✅ **Team Collaboration** - Membership, permissions, invitations, notifications, and activity logs  
+✅ **Deployment Integration** - Gitea repository views, workflow runs, jobs, and logs  
+✅ **Deployment Tracking** - History with workflow and Docker-health metadata  
+
+---
+
+## 🛠️ Tech Stack
+
+| Category | Technology |
+|----------|-----------|
+| **Framework** | Angular 21+ |
+| **Language** | TypeScript 5.9+ |
+| **Styling** | Tailwind CSS 4.3+ |
+| **Package Manager** | npm 10.8.2+ |
+| **Testing** | Vitest 4.0+ |
+| **Code Quality** | Prettier 3.8+ |
+| **Containerization** | Docker & Nginx |
+
+---
+
+## 📦 Run Locally
+
+### Prerequisites
+
+- **Node.js** 18.x or higher
+- **npm** 10.x or higher (or compatible package manager)
+- **Backend API** running on port `8080`
+
+### Installation & Development
 
 ```bash
+# Install dependencies
 npm install
+
+# Start development server
 npm start
+
+# Open browser to http://localhost:4200
+# API requests target http://localhost:8080/api (configured in src/environments/environment.ts)
 ```
 
-Open [http://localhost:4200](http://localhost:4200). Development requests target `http://localhost:8080/api`, configured in `src/environments/environment.ts`.
+---
 
-## Build and test
+## 🧪 Build & Test
 
 ```bash
+# Build for production
 npm run build
+
+# Run unit tests
 npm test
+
+# Watch mode for development
+npm run watch
 ```
 
-## API and authentication
+Test coverage reports are generated in the `coverage/` directory.
 
-The client sends authenticated API calls through a bearer-token interceptor and protects application routes with route guards. It stores the current JWT in browser local storage. The production environment uses the relative `/api` URL so an Nginx container can serve the SPA and proxy API requests under one origin.
+---
 
-The backend Swagger UI at `http://localhost:8080/swagger-ui.html` is the authoritative endpoint reference.
+## 🔐 API & Authentication
 
-## Docker deployment
+- **Security**: JWT bearer tokens via interceptor; route guards protect authenticated pages  
+- **Storage**: JWT stored in browser local storage for session persistence  
+- **Production**: Uses relative `/api` URLs so Nginx can serve SPA and proxy API requests  
+- **API Docs**: Backend Swagger UI available at `http://localhost:8080/swagger-ui.html`
 
-The frontend Dockerfile builds the Angular application and serves it with Nginx. Run the full stack from the backend repository:
+---
+
+## 🐳 Docker Deployment
+
+### Full Stack Deployment
+
+Run the entire application stack from the backend repository:
 
 ```bash
 cd ../gestproj-backend
 docker compose up --build
 ```
 
-The frontend is published at `http://localhost:8081`; its Nginx configuration serves client-side routes and proxies `/api/`. The checked-in proxy upstream is `backend-funnel`, whereas the sibling Compose file calls the service `backend`; align those names in the deployment network before using the containerized frontend API.
+- **Frontend**: http://localhost:8081 (served by Nginx)
+- **Backend API**: Proxied at `/api/` through Nginx
+- **Swagger UI**: http://localhost:8080/swagger-ui.html
 
-## Project structure
+**Note**: Ensure the Nginx upstream matches your compose service names (default: `backend`).
 
-```text
+---
+
+## 📂 Project Structure
+
+```
 src/app/
-  core/       API services, models, guards, and interceptors
-  layout/     authenticated application shell
-  pages/      auth, dashboard, project, task, invitation, profile, and notification screens
-  shared/     reusable UI such as toast notifications
+├── core/          # Services, models, guards, interceptors
+├── layout/        # Authenticated application shell
+├── pages/         # Feature pages (auth, dashboard, projects, tasks, etc.)
+└── shared/        # Reusable UI components & utilities
+
+src/environments/  # Environment-specific config
+src/styles.css    # Global styles
 ```
 
-See [`frontend-master-plan.md`](frontend-master-plan.md) for the implementation status and backend-dependent roadmap.
+Detailed implementation roadmap: See [`frontend-master-plan.md`](frontend-master-plan.md)
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
+- Code standards and conventions
+- Development workflow
+- Testing requirements
+- Pull request process
+
+---
+
+## 📋 Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for release notes and version history.
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** - see [LICENSE](LICENSE) for details.
+
+---
+
+## 👥 Authors & Contact
+
+- **Project**: [gestproj-frontend](https://github.com/your-username/gestproj-frontend)
+- **Full Stack**: [GestProj Organization](https://github.com/your-username)
+
+For issues, questions, or suggestions, please open an [issue](https://github.com/your-username/gestproj-frontend/issues) on GitHub.
