@@ -14,7 +14,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [20.x, 22.x]
 
     steps:
       - name: Checkout code
@@ -30,7 +30,7 @@ jobs:
         run: npm ci --prefer-offline --no-audit
 
       - name: Build application
-        run: npm run build --loglevel=error
+        run: npm run build
 
   security-scan:
     runs-on: ubuntu-latest

@@ -8,7 +8,7 @@ This guide will help you set up the development environment, run the application
 
 Make sure you have the following installed:
 
-- **Node.js**: v18.x or higher ([Download](https://nodejs.org/))
+- **Node.js**: v20.19+ ([Download](https://nodejs.org/))
 - **npm**: v10.x or higher (comes with Node.js)
 - **Git**: For version control
 - **Docker** (optional): For containerized deployment
@@ -17,7 +17,7 @@ Make sure you have the following installed:
 ### Verify Installation
 
 ```bash
-node --version    # Should be v18.0.0 or higher
+node --version    # Should be v20.19.0 or higher
 npm --version     # Should be v10.0.0 or higher
 git --version     # Any recent version
 ```

@@ -5,7 +5,7 @@
 [![GitHub Actions Build](https://github.com/your-username/gestproj-frontend/actions/workflows/build.yml/badge.svg)](https://github.com/your-username/gestproj-frontend/actions/workflows/build.yml)
 [![GitHub Actions Test](https://github.com/your-username/gestproj-frontend/actions/workflows/test.yml/badge.svg)](https://github.com/your-username/gestproj-frontend/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js Version](https://img.shields.io/badge/Node.js-18%2B-brightgreen)](https://nodejs.org/)
+[![Node.js Version](https://img.shields.io/badge/Node.js-20.19%2B-brightgreen)](https://nodejs.org/)
 [![Angular Version](https://img.shields.io/badge/Angular-21-red?logo=angular)](https://angular.io/)
 
 </div>
@@ -49,7 +49,7 @@
 
 ### Prerequisites
 
-- **Node.js** 18.x or higher
+- **Node.js** 20.19+ (Angular 21 requirement)
 - **npm** 10.x or higher (or compatible package manager)
 - **Backend API** running on port `8080`
 
